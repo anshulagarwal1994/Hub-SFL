@@ -1,0 +1,539 @@
+<!--
+/*!
+
+=========================================================
+* Material Dashboard PRO React - v1.8.0
+=========================================================
+
+* Product Page: https://www.creative-tim.com/product/material-dashboard-pro-react
+* Copyright 2019 Creative Tim (https://www.creative-tim.com)
+
+* Coded by Creative Tim
+
+=========================================================
+
+* The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+*/
+
+-->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <!-- Google Tag Manager -->
+    
+    <!-- End Google Tag Manager -->
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <meta name="theme-color" content="#000000" />
+    <!--
+          manifest.json provides metadata used when your web app is added to the
+          homescreen on Android. See https://developers.google.com/web/fundamentals/engage-and-retain/web-app-manifest/
+        -->
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    <link rel="shortcut icon" href="%PUBLIC_URL%/mini_logo.png" />
+    <link
+      rel="apple-touch-icon"
+      sizes="76x76"
+      href="%PUBLIC_URL%/SFL_logo.png"
+    />
+    <link
+      rel="stylesheet"
+      href="//cdn.jsdelivr.net/chartist.js/latest/chartist.min.css"
+    />
+    <script src="//cdn.jsdelivr.net/chartist.js/latest/chartist.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/jvectormap/2.0.4/jquery-jvectormap.css"
+      type="text/css"
+      media="screen"
+    />
+    <link
+      rel="stylesheet"
+      href="//cdn.datatables.net/1.10.16/css/jquery.dataTables.min.css"
+      type="text/css"
+      media="screen"
+    />
+    <!--     Fonts and icons     -->
+    <link
+      href="https://use.fontawesome.com/releases/v5.0.7/css/all.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Material+Icons"
+    />
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet"
+    />
+    <!--
+          Notice the use of %PUBLIC_URL% in the tags above.
+          It will be replaced with the URL of the `public` folder during the build.
+          Only files inside the `public` folder can be referenced from the HTML.
+
+          Unlike "/favicon.ico" or "favicon.ico", "%PUBLIC_URL%/favicon.ico" will
+          work correctly both with client-side routing and a non-root public URL.
+          Learn how to configure a non-root public URL by running `npm run build`.
+        -->
+     
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.25.1/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.33/moment-timezone.min.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <title>SFL Worldwide</title>
+
+    <!-- <script src="https://www.gstatic.com/dialogflow-console/fast/messenger/bootstrap.js?v=1"></script>
+    <df-messenger
+      intent="WELCOME"
+      chat-title="SFLSupportChatbot"
+      agent-id="6567d5b0-80ab-4e46-9e8b-9410023ae9a9"
+      language-code="en"
+    ></df-messenger> -->
+
+    <script type="text/javascript">
+
+      let cancelRequestArr = [];
+        let userType;
+        var closeActiveModel = 0;
+        let userTypeArray = [];
+        var sessionData;
+        var cusid;
+        var currentCusId;
+          // let hostURL = "http://localhost:4000";
+       let hostURL = "https://hubapi.sflworldwide.com"; // Production
+        //let hostURL = "http://phpstack-773983-2633738.cloudwaysapps.com:4443"
+           //let hostURL = "https://uatapi.sflworldwide.com:3434/"; // UAT
+           //let hostURL = "https://phpstack-773983-2633738.cloudwaysapps.com/"; // cloud production
+        // let hostURL = "https://hubuatapi.sflworldwide.com/"; // cloud production
+        setTimeout(() => {
+          if(!window.location.href.includes("get-quote")){
+            openRequestModal();
+          }
+          
+        }, 3000);
+
+      function openRequestModal(){
+        var modal = document.getElementById("myModal");
+
+        if(localStorage.getItem("loggedInUserData")) {
+          sessionData = JSON.parse(localStorage.getItem("loggedInUserData"));
+          userType = sessionData.UserType;
+    
+          if (userType != undefined) {
+            userTypeArray = userType.split(",");
+          }
+
+          if (
+            sessionData != null &&
+            sessionData.IsAvailableForChat == 1 &&
+            userType != ""
+          ) {
+            let apiURL = hostURL + "/customerChat/getChatCustomerRequest";
+            const url = window.location.href;
+            if (!url.includes("Chatbot") && !url.includes("auth/login-page")) {
+              axios
+              .get(apiURL, {})
+              .then((res) => {
+                let requestData = res.data.Data[0];
+
+                if (requestData.length > 0) {
+                  for (var i = 0; i < requestData.length; i++) {
+                    let userTypeIndex = userTypeArray.indexOf(
+                      requestData[i].SelectedCategory
+                    );
+
+                    let localobj = JSON.parse(localStorage.getItem("cancelReqData"));
+                    let localobjidx;
+
+                    if (localobj != null && localobj != undefined) {
+                      localobjidx = localobj.findIndex(
+                        (val) => val.id == requestData[i].ID
+                      );
+                      if (
+                        localobjidx != undefined &&
+                        localobjidx != -1 &&
+                        localobj[localobjidx].id == requestData[i].ID &&
+                        localobj[localobjidx].decline == false
+                      ) {
+                        if (
+                          userTypeIndex != undefined &&
+                          userTypeIndex != null &&
+                          userTypeIndex != -1
+                        ) {
+                          cusId = requestData[i].ID;
+                          currentCusId = localobj[localobjidx].id
+                          modal.style.display = "block";
+                          document.getElementById("chatModalP").innerHTML =
+                            requestData[i].Name + " is requesting for chat";
+                          
+                        }
+                      } else {
+                        if (localStorage.getItem("cancelReqData")) {
+                          let newlocalobj = JSON.parse(
+                            localStorage.getItem("cancelReqData")
+                          );
+
+                          let localobjidxnew = newlocalobj.findIndex(
+                            (val) => val.id == requestData[i].ID
+                          );
+
+                          if (
+                            localobjidxnew == undefined ||
+                            localobjidxnew == null ||
+                            localobjidxnew == -1
+                          ) {
+                            cancelRequestArr.push({
+                              id: requestData[i].ID,
+                              decline: false,
+                            });
+                            newlocalobj.push({
+                              id: requestData[i].ID,
+                              decline: false,
+                            });
+
+                            localStorage.setItem(
+                              "cancelReqData",
+                              JSON.stringify(newlocalobj)
+                            );
+                          }
+                        } else {
+                          cancelRequestArr.push({
+                            id: requestData[i].ID,
+                            decline: false,
+                          });
+                          localStorage.setItem(
+                            "cancelReqData",
+                            JSON.stringify(cancelRequestArr)
+                          );
+                        }
+                      }
+                    } else {
+                      if (localStorage.getItem("cancelReqData")) {
+                        let localobj2 = JSON.parse(
+                          localStorage.getItem("cancelReqData")
+                        );
+                        let localobjidx2 = localobj2.findIndex(
+                          (val) => val.id == requestData[i].ID
+                        );
+
+                        if (
+                          localobjidx2 == undefined ||
+                          localobjidx2 == null ||
+                          localobjidx2 == -1
+                        ) {
+                          cancelRequestArr.push({
+                            id: requestData[i].ID,
+                            decline: false,
+                          });
+                          localobj2.push({
+                            id: requestData[i].ID,
+                            decline: false,
+                          });
+
+                          localStorage.setItem(
+                            "cancelReqData",
+                            JSON.stringify(localobj2)
+                          );
+                        }
+                      } else {
+                        cancelRequestArr.push({
+                          id: requestData[i].ID,
+                          decline: false,
+                        });
+                        localStorage.setItem(
+                          "cancelReqData",
+                          JSON.stringify(cancelRequestArr)
+                        );
+                      }
+                    }
+                  }
+                } else {
+                  modal.style.display = "none";
+                }
+              })
+              .catch((err) => {
+                console.log("setLock err", err);
+              });
+            }
+            
+          } else {
+            // debugger
+            // // console.log("in access = ", sessionData.userModuleAccess.ModuleID[36].WriteAccess)
+            // console.log("Access = ",sessionData.userModuleAccess);
+            // console.log("Access = ",sessionData.userModuleAccess[31]);
+
+            // if(sessionData.IsAllChatAccess == 1 && !localStorage.getItem("alreadyActiveChatData")) {
+              if(sessionData.userModuleAccess[31].WriteAccess == 1 && !localStorage.getItem("alreadyActiveChatData")) {
+              setTimeout(() => {
+                if(closeActiveModel == 0) {
+                  openChatActiveModel();
+                }
+              }, 3500);
+            }
+          }
+        } else {
+          closeActiveModel = 0;
+        }
+        setTimeout(() => {
+          openRequestModal();
+        }, 4000);
+      }
+
+      function openChatActiveModel() {
+        var modal = document.getElementById("myModalForChat");
+        modal.style.display = "block";
+      }
+
+      function activechatstatus () {
+        var modal = document.getElementById("myModalForChat");
+        modal.style.display = "None";
+        closeActiveModel = 1;
+
+        localStorage.setItem("alreadyActiveChatData", 1);
+
+        var chatActiveData = {
+          agentId: sessionData.PersonID,
+          IsAvailableForChat: 1
+        }
+
+        let apiURL = hostURL + "/customerChat/updateAgentChatActiveStatus";
+
+        axios
+              .post(apiURL, chatActiveData)
+              .then((res) => {
+                sessionData.IsAvailableForChat = 1;
+                localStorage.setItem("loggedInUserData", JSON.stringify(sessionData));
+              })
+      }
+
+      function closemodalactive() {
+        localStorage.setItem("alreadyActiveChatData", 1);
+        var modal = document.getElementById("myModalForChat");
+        modal.style.display = "None";
+        closeActiveModel = 1;
+      }
+
+      function closemodal() {
+        var modal = document.getElementById("myModal");
+        modal.style.display = "none";
+        var cookiedata = JSON.parse(localStorage.getItem("cancelReqData"));
+        let cookieidx = cookiedata.findIndex((i) => i.id == currentCusId);
+        cookiedata[cookieidx].decline = true;
+
+        localStorage.setItem("cancelReqData", JSON.stringify(cookiedata));
+      };
+      
+      function acceptRequest() {
+        var sessionData;
+        if(localStorage.getItem("loggedInUserData")) {
+          sessionData = JSON.parse(localStorage.getItem("loggedInUserData"));
+        }
+        let acceptData = {
+          from: "operator",
+          isConnectedWithAgent: 1,
+          cusid: currentCusId,
+          providerId: sessionData.PersonID,
+        };
+
+        let agentConnectionData = {
+          cusId: currentCusId,
+        };
+
+        let apiURL = hostURL + "/customerChat/getIsAgentConnected";
+        let apiURL2 = hostURL + "/customerChat/updateCustomerData";
+        let apiURL3 = hostURL + "/customerChat/insertChatMasterData";
+
+        axios
+          .post(apiURL, agentConnectionData)
+          .then((res) => {
+            let isConnectedWithAgent = res.data.Data[0].IsConnectedWithAgent;
+
+            if (isConnectedWithAgent == 0) {
+              axios
+                .post(apiURL2, acceptData)
+                .then((res) => {
+                  var modal = document.getElementById("myModal");
+                  modal.style.display = "none";
+
+                  var insertChatData = {
+                    ChatId: currentCusId,
+                    CustomerId: currentCusId,
+                    ProviderId: sessionData.PersonID,
+                    LineText: sessionData.Name + " joined the chat at " + moment().format("MM/DD/YYYY hh:mm A"),
+                    LineFrom: "notification",
+                  };
+
+                  axios
+                    .post(apiURL3, insertChatData)
+                    .then((res) => {});
+                })
+            } else {
+              var modal = document.getElementById("myModal");
+              modal.style.display = "none";
+            }
+          })
+      }
+      
+      
+    </script>
+    <style>
+      @-webkit-keyframes rotate {
+        from {
+          -webkit-transform: rotate(0);
+          transform: rotate(0);
+        }
+        to {
+          -webkit-transform: rotate(450deg);
+          transform: rotate(450deg);
+        }
+      }
+
+      @keyframes rotate {
+        from {
+          -webkit-transform: rotate(0);
+          transform: rotate(0);
+        }
+        to {
+          -webkit-transform: rotate(450deg);
+          transform: rotate(450deg);
+        }
+      }
+
+      @-webkit-keyframes line {
+        0% {
+          stroke-dasharray: 2, 85.964;
+          -webkit-transform: rotate(0);
+          transform: rotate(0);
+        }
+        50% {
+          stroke-dasharray: 65.973, 21.9911;
+          stroke-dashoffset: 0;
+        }
+        100% {
+          stroke-dasharray: 2, 85.964;
+          stroke-dashoffset: -65.973;
+          -webkit-transform: rotate(90deg);
+          transform: rotate(90deg);
+        }
+      }
+
+      @keyframes line {
+        0% {
+          stroke-dasharray: 2, 85.964;
+          -webkit-transform: rotate(0);
+          transform: rotate(0);
+        }
+        50% {
+          stroke-dasharray: 65.973, 21.9911;
+          stroke-dashoffset: 0;
+        }
+        100% {
+          stroke-dasharray: 2, 85.964;
+          stroke-dashoffset: -65.973;
+          -webkit-transform: rotate(90deg);
+          transform: rotate(90deg);
+        }
+      }
+
+     
+
+    </style>
+   <!-- Google Tag Manager --> <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start': new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0], j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src= 'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f); })(window,document,'script','dataLayer','GTM-N245MG');</script> <!-- End Google Tag Manager -->
+  </head>
+  <body>
+    <!-- Google Tag Manager (noscript) --> <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-N245MG" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript> <!-- End Google Tag Manager (noscript) -->
+    
+ 
+    <!-- <noscript> You need to enable JavaScript to run this app. </noscript> -->
+    <div id="root"></div>
+    <div id="myModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <!-- <span onClick="closemodal()" class="modal-close"><i class="fas fa-times"></i></span> -->
+          <h2>New Request</h2>
+        </div>
+        <div class="modal-body">
+          <div class="chat-request">
+            <i class="far fa-comments"></i>
+            <p id="chatModalP"></p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button
+            onClick="closemodal()"
+            type="button"
+            class=" cancelbtn"
+          >
+            Cancel
+          </button>
+          <button
+            onClick="acceptRequest()"
+            type="button"
+            class="deletebtn"
+          >
+            Accept
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="myModalForChat" class="modal">
+      <div class="modal-content modalWidth">
+        <div class="modal-header">
+          <!-- <span onClick="closemodal()" class="modal-close"><i class="fas fa-times"></i></span> -->
+          <h2>You are not active on chat</h2>
+        </div>
+        <div class="modal-body">
+          <div class="chat-request">
+            <i class="far fa-comments"></i>
+            <p id="chatActiveModalP">Do you want to Active your Chat Status?</p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button
+            onClick="closemodalactive()"
+            type="button"
+            class=" cancelbtn"
+          >
+            No
+          </button>
+          <button
+            onClick="activechatstatus()"
+            type="button"
+            class="deletebtn"
+          >
+            Yes
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- <div id="loader" class="loader-cs-outer">
+      <div class="loader-cs">
+        <svg viewBox="0 0 32 32" width="40" height="40">
+          <circle id="ld-spinner" cx="16" cy="16" r="14" fill="none"></circle>
+        </svg>
+      </div>
+    </div> -->
+
+    <iframe
+      id="receiver"
+      style="display:none"
+      src="https://www.sflworldwide.com"
+    >
+    </iframe>
+    <!--
+          This HTML file is a template.
+          If you open it directly in the browser, you will see an empty page.
+
+          You can add webfonts, meta tags, or analytics to this file.
+          The build step will place the bundled scripts into the <body> tag.
+
+          To begin the development, run `npm start` or `yarn start`.
+          To create a production bundle, use `npm run build` or `yarn build`.
+        -->
+  </body>
+</html>
