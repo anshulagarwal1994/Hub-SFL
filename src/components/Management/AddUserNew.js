@@ -62,7 +62,17 @@ class Step1 extends React.Component {
           classname: "inactive",
         },
       ],
-
+      Status: "",
+      UserStatusList: [
+        {
+          label: "Active",
+          value: "Active",
+        },
+        {
+          label: "Inactive",
+          value: "Inactive",
+        },
+      ],
       fullName: "",
       userName: "",
       Email: "",
@@ -164,6 +174,7 @@ class Step1 extends React.Component {
       PaperSizeList: [],
       PaperSize: "",
       PaperReviewLink: "",
+      LoginpersonId: "",
     };
   }
 
@@ -173,6 +184,7 @@ class Step1 extends React.Component {
     this.getManagedBy();
     this.getUserDetail();
     this.getPaperSizeList();
+    this.setState({ LoginpersonId: CommonConfig.loggedInUserData().PersonID });
   }
 
   generatePreviewLink = () => {
@@ -289,12 +301,19 @@ class Step1 extends React.Component {
         .then((res) => {
           if (res.success) {
             let userData = res.data;
+            debugger;
             this.setState({
               userModules: userData.userModule,
               serviceList: userData.userMarkup,
             });
             if (userData.UserData) {
               this.setState({
+                Status: !CommonConfig.isEmpty(this.props.location.state)
+                  ? {
+                      value: userData.UserData[0].Status,
+                      label: userData.UserData[0].Status,
+                    }
+                  : "",
                 fullName: !CommonConfig.isEmpty(this.props.location.state)
                   ? userData.UserData[0].Name
                   : "",
@@ -663,7 +682,7 @@ class Step1 extends React.Component {
   };
 
   handledInput = (e, id, MarkupType, Type) => {
-    debugger
+    debugger;
     let MarkupData = this.state.serviceList;
     let i = MarkupData.findIndex((x) => x.ServiceID === id);
 
@@ -838,6 +857,56 @@ class Step1 extends React.Component {
     return IsFormValid;
   }
 
+  activeInactiveUser = (e) => {
+    debugger;
+    this.setState({ Status: e });
+    // let data = {
+    //   personID: Number(this.props.location.state),
+    //   status: this.state.Status.value,
+    // };
+
+    // try {
+    //   this.setState({ Loading: true });
+    //   api
+    //     .post("userManagement/activeInactiveUser", data)
+    //     .then((res) => {
+    //       if (res.success) {
+    //         this.getUserDetail();
+    //       } else {
+    //         cogoToast.error("Something Went Wrong");
+    //       }
+    //     })
+    //     .catch((err) => {
+    //       cogoToast.error("Something Went Wrong");
+    //     });
+    // } catch (error) {}
+  };
+
+  deleteUser = () => {
+    debugger;
+    this.showLoader();
+    var userid = Number(this.props.location.state);
+    console.log("innnnn", userid);
+    var data = {
+      userid: userid,
+    };
+    api.post("userManagement/deleteUser", data).then((res) => {
+      this.hideLoader();
+      console.log("res....", res);
+      if (res.message === "User is Deleted Successfully") {
+        cogoToast.success(res.message);
+        this.props.history.push({
+          pathname: "/admin/UserList",
+          state: {
+            filterlist: this.props.history.location.filterlist,
+            sortlist: this.props.history.location.sortlist,
+          },
+        });
+      } else {
+        cogoToast.error(res.message);
+      }
+    });
+  };
   saveUser = (redirect) => {
     if (this.validate()) {
       try {
@@ -857,6 +926,7 @@ class Step1 extends React.Component {
           ContactName: this.state.fullName,
           CountryID: this.state.Country.value,
           UserDetailID: this.state.UserDetailID,
+          Status: this.state.Status.value,
         };
 
         var data = {};
@@ -880,6 +950,7 @@ class Step1 extends React.Component {
             PhoneID: this.state.MobileID,
             Phone2ID: this.state.Mobile1ID,
             SelectedPaperSize: this.state.PaperSize.value,
+            Status: this.state.Status.value,
           };
         } else {
           data = {
@@ -899,6 +970,7 @@ class Step1 extends React.Component {
               : Number(this.props.location.state),
             EmailID: this.state.EmailID,
             PhoneID: this.state.MobileID,
+            Status: this.state.Status.value,
             SelectedPaperSize: this.state.PaperSize.value,
           };
         }
@@ -1485,6 +1557,10 @@ class Step1 extends React.Component {
 
     const paperSize = this.state.PaperSizeList.map((type) => {
       return { value: type.ID, label: type.PaperDisplayName };
+    });
+
+    const userstatus = this.state.UserStatusList.map((type) => {
+      return { value: type.value, label: type.label };
     });
 
     const CityOptions = this.state.GoogleAPICityList.map((city) => {
@@ -2127,6 +2203,20 @@ class Step1 extends React.Component {
                           )}
                         />
                       </GridItem>
+                      <GridItem xs={12} sm={12} md={3}>
+                        <Autocomplete
+                          id="combo-box-demo"
+                          options={userstatus}
+                          value={this.state.Status}
+                          onChange={(event, value) =>
+                            this.activeInactiveUser(value)
+                          }
+                          getOptionLabel={(option) => option.label}
+                          renderInput={(params) => (
+                            <TextField {...params} label="User Status" />
+                          )}
+                        />
+                      </GridItem>
                     </GridContainer>
 
                     <GridContainer>
@@ -2250,31 +2340,34 @@ class Step1 extends React.Component {
                 </div>
               </Cardbody>
             </Card>
-            <div className="shipment-submit">
-              <div className="center">
-                {this.props.history.location.searchData ? (
+            {this.state.LoginpersonId === 1 ||
+            this.state.LoginpersonId === 18 ? (
+              <div className="shipment-submit">
+                <div className="left">
                   <Button
-                    color="secondary"
-                    onClick={() => this.handleSearchBack()}
+                    justify="center"
+                    color="danger"
+                    onClick={() => this.deleteUser()}
                   >
-                    Back To Search
+                    Delete
                   </Button>
-                ) : null}
-              </div>
-              <div className="right">
-                {CommonConfig.isEmpty(this.props.location.state) ? null : (
-                  <Button color="rose" onClick={() => this.saveUser(false)}>
-                    Save
+                </div>
+
+                <div className="right">
+                  {CommonConfig.isEmpty(this.props.location.state) ? null : (
+                    <Button color="rose" onClick={() => this.saveUser(false)}>
+                      Save
+                    </Button>
+                  )}
+                  <Button color="primary" onClick={() => this.saveUser(true)}>
+                    Save & Exit
                   </Button>
-                )}
-                <Button color="primary" onClick={() => this.saveUser(true)}>
-                  Save & Exit
-                </Button>
-                <Button color="secondary" onClick={() => this.cancelUser()}>
-                  Cancel
-                </Button>
+                  <Button color="secondary" onClick={() => this.cancelUser()}>
+                    Cancel
+                  </Button>
+                </div>
               </div>
-            </div>
+            ) : null}
           </GridItem>
         </GridContainer>
         {this.state.Loading === true ? (

@@ -1,6 +1,12 @@
 import React from "react";
 import PropTypes from "prop-types";
 // core components
+//import TimeRangePicker from "@wojtekmaj/react-timerange-picker";
+// import { DemoContainer } from "@mui/x-date-pickers/internals/demo";
+// import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+// import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+// import { TimePicker } from "@mui/x-date-pickers/TimePicker";
+
 import { makeStyles } from "@material-ui/core/styles";
 import GridContainer from "components/Grid/GridContainer.js";
 import Button from "components/CustomButtons/Button.js";
@@ -17,9 +23,21 @@ import Icon from "@material-ui/core/Icon";
 import styles from "assets/jss/material-dashboard-pro-react/views/validationFormsStyle.js";
 import withStyles from "@material-ui/core/styles/withStyles";
 import Card from "components/Card/Card.js";
+import momentTimezone from "moment-timezone";
 import CardHeader from "components/Card/CardHeader.js";
 import SimpleBackdrop from "../../utils/general";
+import { format } from "date-fns";
 import _ from "lodash";
+//time picker
+import TimePicker from "react-time-picker";
+import "react-time-picker/dist/TimePicker.css";
+//import "react-clock/dist/Clock.css";
+// import dayjs from "dayjs";
+// import { DemoContainer, DemoItem } from "@mui/x-date-pickers/internals/demo";
+// import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+// import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+
+//import { MobileTimePicker } from "@mui/x-date-pickers/MobileTimePicker";
 // import $ from 'jquery';
 import CardIcon from "components/Card/CardIcon.js";
 import cogoToast from "cogo-toast";
@@ -48,6 +66,7 @@ import axios from "axios";
 import Geocode from "react-geocode";
 import { publicIp, publicIpv4, publicIpv6 } from "public-ip";
 import UserAccess from "components/User Access/UserAccess";
+import momentTimezoneWithData20122022 from "moment-timezone/builds/moment-timezone-with-data-2012-2022";
 //import { cloudbilling } from "googleapis/build/src/apis/cloudbilling";
 // import { Map, GoogleApiWrapper, Marker } from "google-maps-react";
 // import CurrentLocation from "react-current-location-address";
@@ -124,6 +143,16 @@ class ShipmentCustom extends React.Component {
       ShipmentType: "",
       DocumentManagedBy: "",
       notes: [],
+      ReadyTime: "",
+      ReadytimeView: "",
+      availibletimeView: "",
+      ReadyTimeList: CommonConfig.FedexExpressStarttime,
+      ReadyTimeErr: "",
+      ReadyTimeErrHelperText: "",
+      AvailableTime: "",
+      AvailableTimeList: CommonConfig.FedexExpressAvailabletime,
+      AvailableTimeErr: "",
+      AvailableTimeErrHelperText: "",
       ServiceList: [],
       SubServiceList: [],
       Subservicename: true,
@@ -134,8 +163,12 @@ class ShipmentCustom extends React.Component {
       ShipmentStatusList: [],
       ContainerName: "",
       PickupVendorName: "",
+      pickuptimeshow: false,
       ContainerNameList: [],
       PickupVendorList: [],
+      NotesforPickup: "",
+      NotesforPickupErr: false,
+      NotesforPickupHelperText: "",
       deleteopen: false,
       CountryList: [],
       AllClearStatusList: [],
@@ -212,17 +245,18 @@ class ShipmentCustom extends React.Component {
       ShowGeneratedPriperdlable: false,
       IsPackageAccess: "",
       IsfedexLabelOpen: false,
-      setTrackingValue:"",
+      setTrackingValue: "",
       IsfedexLabelOpenPickup: false,
       IsfedexLabelGeneratePickup: false,
       FedexTrackNumber: "",
-      FedexTrackAddorUpdate:"",
-      PickupID:"",
+      FedexTrackAddorUpdate: "",
+      PickupID: "",
       cancelTrackNumber: "",
-      cancelPickupID:"",
+      cancelPickupID: "",
       IsDocDialogOpen: false,
       ComPrepaidDocData: [],
       checkPickup: "",
+      selectedPickupVendorName: "",
       //------------------------------------- Tab 2 Package Data          ---------------------------------------------------------//
 
       PackageList: [],
@@ -484,6 +518,7 @@ class ShipmentCustom extends React.Component {
       DocumentVisaValidDate: "",
       DocumentArrivalCategory: "",
       // Correspondence Data
+      pickupDisable: false,
 
       digit: 0,
       id: null,
@@ -513,7 +548,7 @@ class ShipmentCustom extends React.Component {
         CommonConfig.getUserAccess("Shipment").AllAccess === 1 ? false : true,
       ReadOnly:
         CommonConfig.getUserAccess("Shipment").DeleteAccess === 1 ||
-          CommonConfig.getUserAccess("Shipment").WriteAccess === 1
+        CommonConfig.getUserAccess("Shipment").WriteAccess === 1
           ? false
           : true,
     });
@@ -715,7 +750,6 @@ class ShipmentCustom extends React.Component {
   }
 
   showHide() {
-    debugger;
     this.state.Steps.map((step, index) => {
       index === 0
         ? (document.getElementById(step.stepId).style.display = "block")
@@ -737,7 +771,7 @@ class ShipmentCustom extends React.Component {
     if (
       packageType === "PaymentReceived" &&
       this.state.paymentReceived.filter((x) => x.Status === "Active").length ===
-      0
+        0
     ) {
       this.addRowPaymentReceived();
     }
@@ -752,7 +786,7 @@ class ShipmentCustom extends React.Component {
     if (
       packageType === "PaymentMethod" &&
       this.state.creditCardList.filter((x) => x.Status === "Active").length ===
-      0
+        0
     ) {
       this.addRowCreditCard();
     }
@@ -775,7 +809,7 @@ class ShipmentCustom extends React.Component {
     if (
       packageType === "ComInvoiceVisible" &&
       this.state.commercialList.filter((x) => x.Status === "Active").length ===
-      0
+        0
     ) {
       this.addnewRowCommercial();
     }
@@ -899,6 +933,7 @@ class ShipmentCustom extends React.Component {
             this.state.useraccess.userModuleAccess[15].DeleteAccess === 0
           ) {
             this.state.AllClearStatusList.splice(3);
+            console.log("allclear..", this.state.AllClearStatusList);
           }
         })
         .catch((err) => {
@@ -976,6 +1011,7 @@ class ShipmentCustom extends React.Component {
     let packages_data = [];
     let com_data = [];
     var paymentdata = [];
+
     if (scheduleobj === "Air" || scheduleobj === "Ground") {
       if (this.state.PackageType === "Package") {
         for (var i = 0; i < packobj.length; i++) {
@@ -1123,6 +1159,7 @@ class ShipmentCustom extends React.Component {
       var packIndex = packobj.findIndex(
         (x) => x.PackageNumber == commercialData[i].PackageNumber
       );
+      console.log("packobj[packIndex] = ", commercialData[i]);
       commercail_details = {
         shipments_tracking_number: "",
         package_number: commercialData[i].PackageNumber,
@@ -1138,7 +1175,6 @@ class ShipmentCustom extends React.Component {
       com_data.push(commercail_details);
     }
     var commercial = com_data;
-
     var shipments = {
       tracking_number: "",
       shipment_type: scheduleobj,
@@ -1151,9 +1187,10 @@ class ShipmentCustom extends React.Component {
       ShipmentStatus: this.state.ShipmentStatus,
       pickup_date:
         CommonConfig.isEmpty(this.state.PickupDate) != true
-          ? moment(this.state.PickupDate)
-            .format("YYYY-MM-DD HH:mm:ss")
-            .toString()
+          ? momentTimezone(this.state.PickupDate)
+              .tz(CommonConfig.UStimezone)
+              .format("YYYY-MM-DD HH:mm:ss")
+              .toString()
           : null,
       package_type: !CommonConfig.isEmpty(packobj)
         ? this.state.PackageType
@@ -1183,8 +1220,8 @@ class ShipmentCustom extends React.Component {
       InvoiceDueDate:
         CommonConfig.isEmpty(this.state.InvoiceDueDate) != true
           ? moment(this.state.InvoiceDueDate)
-            .format("YYYY-MM-DD HH:mm:ss")
-            .toString()
+              .format("YYYY-MM-DD HH:mm:ss")
+              .toString()
           : null,
       managed_by: this.state.ManagedBy.value,
       ServiceName: this.state.ServiceName ? this.state.ServiceName.value : "",
@@ -1341,8 +1378,10 @@ class ShipmentCustom extends React.Component {
           this.state.AllClear.value === "Not Ready"
             ? null
             : this.state.AllClear.value === "Ready for Yes"
-              ? "3"
-              : this.state.AllClear.value,
+            ? "3"
+            : this.state.AllClear.value === "Collections"
+            ? "4"
+            : this.state.AllClear.value,
         Amount: this.state.TotalCostReceived,
         TotalWeight: this.state.totalChargableWeight,
         TotalCommercialvalue: totalCommercial,
@@ -1484,7 +1523,7 @@ class ShipmentCustom extends React.Component {
       };
       api.post("scheduleshipment/getShipmentInfo", data).then((res) => {
         if (res.success) {
-
+          console.log("Ansdhu = ", res);
           var shipmentType = {
             value: res.data[0].ShipmentType,
             label: res.data[0].ShipmentType,
@@ -1501,19 +1540,23 @@ class ShipmentCustom extends React.Component {
             value:
               res.data[0].AllClear === 3 // ? "Ready for Yes"
                 ? "Ready for Yes"
+                : res.data[0].AllClear === 4 // ? "Ready for Yes"
+                ? "Collections"
                 : !CommonConfig.isEmpty(res.data[0].AllClear)
-                  ? res.data[0].AllClear === 0
-                    ? "No"
-                    : "Yes"
-                  : "Not Ready",
+                ? res.data[0].AllClear === 0
+                  ? "No"
+                  : "Yes"
+                : "Not Ready",
             label:
               res.data[0].AllClear === 3 // ? "Ready for Yes"
                 ? "Ready for Yes"
+                : res.data[0].AllClear === 4 // ? "Ready for Yes"
+                ? "Collections"
                 : !CommonConfig.isEmpty(res.data[0].AllClear)
-                  ? res.data[0].AllClear === 0
-                    ? "No"
-                    : "Yes"
-                  : "Not Ready",
+                ? res.data[0].AllClear === 0
+                  ? "No"
+                  : "Yes"
+                : "Not Ready",
           };
           // AllClear:
           // res.data[0].AllClear === 3 // ? "Ready for Yes"
@@ -1580,10 +1623,10 @@ class ShipmentCustom extends React.Component {
               res.data[0].AllClear === 3 // ? "Ready for Yes"
                 ? "Ready for Yes"
                 : !CommonConfig.isEmpty(res.data[0].AllClear)
-                  ? res.data[0].AllClear === 0
-                    ? false
-                    : true
-                  : false,
+                ? res.data[0].AllClear === 0
+                  ? false
+                  : true
+                : false,
             IsPackageAccess: !CommonConfig.isEmpty(res.data[0].IsPackageAccess)
               ? res.data[0].IsPackageAccess.data[0] === 0
                 ? true
@@ -1621,7 +1664,6 @@ class ShipmentCustom extends React.Component {
       api.post("scheduleshipment/getAdditionalDetails", data).then((res) => {
         if (res.success) {
           if (res.data.length > 0) {
-            console.log("Test anshul = ", res.data[0]);
             this.setState({
               movingBackIndia: !CommonConfig.isEmpty(
                 res.data[0].MovingBackToIndia
@@ -1642,7 +1684,10 @@ class ShipmentCustom extends React.Component {
                   ? false
                   : true
                 : "",
-              LatestArrivalDate: res.data[0].LatestArrivalDate,
+              LatestArrivalDate:
+                res.data[0].LatestArrivalDate === "00/00/0000"
+                  ? ""
+                  : res.data[0].LatestArrivalDate,
               AppliedForTR: !CommonConfig.isEmpty(res.data[0].AppliedForTR)
                 ? res.data[0].AppliedForTR.data[0] === 0
                   ? false
@@ -1655,7 +1700,10 @@ class ShipmentCustom extends React.Component {
                   ? false
                   : true
                 : "",
-              VisaValidDate: res.data[0].VisaValidDate,
+              VisaValidDate:
+                res.data[0].VisaValidDate === "00/00/0000"
+                  ? ""
+                  : res.data[0].VisaValidDate,
               VisaCategory: res.data[0].ArrivalCategory,
               UserAdditionalDetailsID: res.data[0].UserAdditionalDetailsID,
 
@@ -1675,7 +1723,10 @@ class ShipmentCustom extends React.Component {
                   ? false
                   : true
                 : "",
-              DocumentLatestArrivalDate: res.data[0].LatestArrivalDate,
+              DocumentLatestArrivalDate:
+                res.data[0].LatestArrivalDate === "00/00/0000"
+                  ? ""
+                  : res.data[0].LatestArrivalDate,
               DocumentAppliedForTR: !CommonConfig.isEmpty(
                 res.data[0].AppliedForTR
               )
@@ -1690,9 +1741,15 @@ class ShipmentCustom extends React.Component {
                   ? false
                   : true
                 : "",
-              DocumentVisaValidDate: res.data[0].VisaValidDate,
+              DocumentVisaValidDate:
+                res.data[0].VisaValidDate === "00/00/0000"
+                  ? ""
+                  : res.data[0].VisaValidDate,
               DocumentArrivalCategory: res.data[0].ArrivalCategory,
-              CustomClearanceDate: res.data[0].CustomClearanceDate,
+              CustomClearanceDate:
+                res.data[0].CustomClearanceDate === "00/00/0000"
+                  ? ""
+                  : res.data[0].CustomClearanceDate,
             });
           }
         }
@@ -1755,7 +1812,6 @@ class ShipmentCustom extends React.Component {
       api
         .post("scheduleshipment/GetPickupconfDetails", data)
         .then((result) => {
-          
           // if (result.data.length > 0) {
           //   this.setState({ isTrackingNumberVisible: true });
           // }
@@ -1788,6 +1844,7 @@ class ShipmentCustom extends React.Component {
           var i = 1;
           result.data.map((Obj) => {
             Obj.Index = i;
+            Obj.ustime = false;
             i++;
             return Obj;
           });
@@ -1862,7 +1919,9 @@ class ShipmentCustom extends React.Component {
               Status: "Active",
               AttachmentName: "Commercial Invoice",
               TrackingNumber: "1",
-              DocumentCreatedOn: moment().format(CommonConfig.dateFormat.dateOnly),
+              DocumentCreatedOn: moment().format(
+                CommonConfig.dateFormat.dateOnly
+              ),
               DocumentCreatedBy: "Auto",
             },
             {
@@ -1872,7 +1931,9 @@ class ShipmentCustom extends React.Component {
               AttachmentName: "Invoice",
               TrackingNumber: "2",
               Status: "Active",
-              DocumentCreatedOn: moment().format(CommonConfig.dateFormat.dateOnly),
+              DocumentCreatedOn: moment().format(
+                CommonConfig.dateFormat.dateOnly
+              ),
               DocumentCreatedBy: "Auto",
             },
             {
@@ -1883,7 +1944,9 @@ class ShipmentCustom extends React.Component {
               Status: "Active",
               AttachmentName: "",
               TrackingNumber: "3",
-              DocumentCreatedOn: moment().format(CommonConfig.dateFormat.dateOnly),
+              DocumentCreatedOn: moment().format(
+                CommonConfig.dateFormat.dateOnly
+              ),
               DocumentCreatedBy: "Auto",
             },
           ];
@@ -1932,27 +1995,18 @@ class ShipmentCustom extends React.Component {
               this.state.Attachments.push(result.data[j]);
             }
           }
-          debugger;
           var remainingfile = [];
           if (PrepaidLabels.length > 0) {
             for (var i = 0; i < PrepaidLabels.length; i++) {
               let comparevalue = PrepaidLabels[i].FileName.slice(-6);
-              console.log(
-                "PrepaidLabels[i].FileName = ",
-                PrepaidLabels
-              );
+              console.log("PrepaidLabels[i].FileName = ", PrepaidLabels);
               console.log("ompate = ", comparevalue);
               if (comparevalue === "-1.pdf" || comparevalue === " -1.pdf") {
                 this.state.Attachments.push(PrepaidLabels[i]);
               } else {
-
                 remainingfile.push(PrepaidLabels[i]);
               }
             }
-
-            debugger
-
-
             console.log("Anshul data14 = ", remainingfile.length);
             console.log("remainingfile.length = ", remainingfile.length);
             if (remainingfile.length > 0) {
@@ -1971,21 +2025,20 @@ class ShipmentCustom extends React.Component {
                 }
               }
             }
-
-
-
           } else {
             console.log("Wlcome Test");
             if (PrepaidLabels.length > 0) {
               for (var j = 0; j < PrepaidLabels.length; j++) {
                 this.state.Attachments.push(PrepaidLabels[0]);
               }
-
             }
           }
 
           if (
             this.state.ServiceName.value === "FedEx" ||
+            (this.state.ServiceName.value === "SFL" &&
+              this.state.ShipmentType.value === "Air" &&
+              this.state.SubServiceName.value === "SFL Saver") ||
             ((this.state.ServiceName.value == "SFL Worldwide" &&
               this.state.ShipmentType.value === "Ocean" &&
               this.state.SubServiceName.value === "Texas Console") ||
@@ -2036,8 +2089,6 @@ class ShipmentCustom extends React.Component {
             //   }
             // }
           }
-
-
         })
         .catch((err) => {
           console.log("error......", err);
@@ -2179,9 +2230,9 @@ class ShipmentCustom extends React.Component {
                 if (
                   this.state.useraccess.userModuleAccess[15].ModuleID === 18 &&
                   this.state.useraccess.userModuleAccess[15].WriteAccess ===
-                  1 &&
+                    1 &&
                   this.state.useraccess.userModuleAccess[15].DeleteAccess ===
-                  0 &&
+                    0 &&
                   this.state.AllClear != "Yes"
                 ) {
                   this.setState({
@@ -2213,18 +2264,125 @@ class ShipmentCustom extends React.Component {
         this.setState({ SubServiceName: value });
       } else if (type === "ManagedBy") {
         this.setState({ ManagedBy: value });
+      } else if (type === "ReadyTime") {
+        debugger;
+        //this.setState({ ReadytimeView: value.label });
+        var ATimelist =
+          this.state.PickupVendorName.value === 68 &&
+          (this.state.ShipmentType.value === "Ocean" ||
+            this.state.ShipmentType.value === "Ground")
+            ? CommonConfig.FedexGroundAvailabletime
+            : this.state.PickupVendorName.value === 68 &&
+              this.state.ShipmentType.value === "Air"
+            ? CommonConfig.FedexExpressAvailabletime
+            : CommonConfig.OtherAvailabletime;
+        var namelist = [];
+        var avaliblelist = [];
+        var sumoflabel = 0;
+        debugger;
+        var namelabel = 0;
+        namelist = this.state.ReadyTimeList.filter((name) => {
+          if (name.view === value.label) {
+            return name;
+          }
+        });
+        console.log("nnnn", namelist);
+        this.setState({ ReadyTime: namelist[0].value });
+
+        avaliblelist = ATimelist.filter((name) => {
+          sumoflabel = parseInt(namelist[0].label + 2);
+          namelabel = parseInt(name.label);
+          if (namelabel >= sumoflabel) {
+            return name;
+          }
+        });
+        console.log("aaaa", avaliblelist);
+        debugger;
+        this.setState({ AvailableTimeList: avaliblelist });
+        var avalibletimelists = {
+          value: avaliblelist[0].label,
+          label: avaliblelist[0].view,
+        };
+        this.setState({
+          availibletimeView: avalibletimelists,
+          AvailableTime: avaliblelist[0].value,
+        });
+
+        this.setState({
+          ReadytimeView: value,
+          //ReadyTime: event.target.value,
+          ReadyTimeErrHelperText: "",
+          ReadyTimeErr: false,
+        });
+      } else if (type === "AvailableTime") {
+        debugger;
+        this.setState({
+          availibletimeView: value,
+          //AvailableTime: event.target.value,
+          AvailableTimeErrHelperText: "",
+          AvailableTimeErr: false,
+        });
+        var avaliblenamelist = this.state.AvailableTimeList.filter((name) => {
+          if (name.view === value.label) {
+            return name;
+          }
+        });
+
+        console.log("nnnn", avaliblenamelist);
+        this.setState({ AvailableTime: avaliblenamelist[0].value });
       } else if (type === "ContainerName") {
         this.setState({ ContainerName: value });
       } else if (type === "PickupProvider") {
         console.log("PickupProvider = ", value);
         debugger;
-        if (value.value == 68) {
-          var yesterday = Datetime.moment();
-          var before = new Date();
+        if (
+          value.value == 68 &&
+          (this.state.ShipmentType.value === "Ocean" ||
+            this.state.ShipmentType.value === "Ground")
+        ) {
+          this.setState({
+            pickupDisable: false,
+            pickuptimeshow: true,
+            ReadytimeView: "",
+            ReadyTime: "",
+            availibletimeView: "",
+            avaliblelist: "",
+            ReadyTimeList: CommonConfig.FedexGroundStarttime,
+            AvailableTimeList: CommonConfig.FedexGroundAvailabletime,
+          });
+          var yesterdaydate = Datetime.moment();
+          var yesterday = momentTimezone(yesterdaydate)
+            .tz(CommonConfig.UStimezone)
+            .format();
+
+          var before = moment().tz("America/New_York");
+          before = new Date();
+
+          var options = { timeZone: "America/New_York" };
+          //var before = datebefore(options);
+          // var before = momentTimezone(datebefore)
+          //   .tz(CommonConfig.UStimezone)
+          //   .format("ddd MMM DD yyyy HH:MM:ss GMT z (Z)");
+          // var before = format(datebefore, "yyyy-MM-dd HH:mm:ss", {
+          //   timeZone: "America/New_York",
+          // });
+          // console.log("bbb", datebefore);
+          console.log("bbb", before);
 
           var addDayTotal = 0;
-
           if (
+            this.state.ServiceName.value === "SFL" &&
+            this.state.ShipmentType.value === "Air" &&
+            this.state.SubServiceName.value === "SFL Saver"
+          ) {
+            if (before.getDay() == 0) {
+              addDayTotal = 13;
+            } else if (before.getDay() == 6) {
+              addDayTotal = 14;
+            } else {
+              addDayTotal = 15;
+            }
+          } else if (
             this.state.ShipmentType.value != "Ground" &&
             this.state.ShipmentType.value != "Ocean"
           ) {
@@ -2248,27 +2406,77 @@ class ShipmentCustom extends React.Component {
           }
 
           if (addDayTotal != 0) {
-            console.log(addDayTotal);
             before = before.setDate(before.getDate() + addDayTotal);
-            console.log("Before = ", before);
             before = Datetime.moment(before);
-            console.log(before);
+            const date = new Date(before);
+            const usTimeZone = "America/New_York"; // Replace with the desired US time zone
+            const usDate = date.toLocaleString("en-US", {
+              timeZone: usTimeZone,
+            });
+            before = Datetime.moment(usDate);
           }
-          console.log("Yesterday = ", yesterday);
-          valid1 = function (current) {
+          valid1 = function(current) {
+            const usTimeZone = "America/New_York"; // Replace with the desired US time zone
+            const usDate = current.toLocaleString("en-US", {
+              timeZone: usTimeZone,
+            });
+            var ustimee = Datetime.moment(usDate);
+            var USyesterday = momentTimezone(yesterday).tz(
+              CommonConfig.UStimezone
+            );
+            console.log(
+              "yesss11",
+              momentTimezone(yesterday).tz(CommonConfig.UStimezone)
+            );
             return (
-              current.day() !== 0 &&
-              current.day() !== 6 &&
-              current.isAfter(yesterday) &&
-              current.isBefore(before)
+              ustimee.day() !== 0 &&
+              ustimee.day() !== 6 &&
+              ustimee.isAfter(USyesterday) &&
+              ustimee.isBefore(before)
             );
           };
           document.getElementById("NonFedexDates").style.display = "none";
           document.getElementById("FedexDates").style.display = "block";
+        } else if (value.value == "NULL") {
+          this.setState({
+            pickupDisable: true,
+            ReadyTime: "",
+            ReadytimeView: "",
+            AvailableTime: "",
+            availibletimeView: "",
+            PickupDate: "",
+            NotesforPickup: "",
+          });
+        } else if (
+          value.value == 68 &&
+          this.state.ShipmentType.value === "Air"
+        ) {
+          this.setState({
+            pickupDisable: false,
+            ReadytimeView: "",
+            ReadyTime: "",
+            availibletimeView: "",
+            avaliblelist: "",
+            ReadyTimeList: CommonConfig.FedexExpressStarttime,
+            AvailableTimeList: CommonConfig.FedexExpressAvailabletime,
+          });
+          document.getElementById("FedexDates").style.display = "none";
+          document.getElementById("NonFedexDates").style.display = "block";
         } else {
+          this.setState({
+            pickupDisable: false,
+            ReadytimeView: "",
+            ReadyTime: "",
+            availibletimeView: "",
+            avaliblelist: "",
+            ReadyTimeList: CommonConfig.OtherStarttime,
+            AvailableTimeList: CommonConfig.OtherAvailabletime,
+          });
           document.getElementById("FedexDates").style.display = "none";
           document.getElementById("NonFedexDates").style.display = "block";
         }
+        //111
+
         this.setState({ PickupVendorName: value });
       } else if (type === "ShipmentType") {
         this.setState({
@@ -2289,7 +2497,9 @@ class ShipmentCustom extends React.Component {
         return (
           <tr>
             <td style={{ width: "154px" }}>
-              {moment(notes.CreatedOn).format(CommonConfig.dateFormat.dateTime)}
+              {momentTimezone(notes.CreatedOn)
+                .tz(CommonConfig.UStimezone)
+                .format(CommonConfig.dateFormat.dateTime)}
             </td>
             <td>
               {notes.disabled ? (
@@ -2326,7 +2536,7 @@ class ShipmentCustom extends React.Component {
                 </Button>
                 {this.state.notes.filter((x) => x.Status === "Active")
                   .length ===
-                  idx + 1 ? (
+                idx + 1 ? (
                   <Button
                     justIcon
                     color="facebook"
@@ -2353,7 +2563,6 @@ class ShipmentCustom extends React.Component {
   };
 
   navigateChange = (key) => {
-    debugger;
     let stepsList = this.state.Steps;
     let activeIndex = stepsList.findIndex((x) => x.classname === "active");
     if (key !== activeIndex) {
@@ -2401,13 +2610,11 @@ class ShipmentCustom extends React.Component {
                 // toState: ToState,
                 toStateAutoComplete: res.data.length ? true : false,
               });
-              console.log("99999", this.state.toStateAutoComplete);
             } else {
               this.setState({
                 toStateList: res.data,
                 toStateAutoComplete: res.data.length ? true : false,
               });
-              console.log("88888", this.state.toStateAutoComplete);
             }
 
             if (this.state.toState == "") {
@@ -2416,16 +2623,13 @@ class ShipmentCustom extends React.Component {
               this.state.toStateAutoComplete = false;
               // this.state.toState = this.state.toState;
             }
-
-            console.log("Hello data = ", this.state.toState);
-            console.log("77777", this.state.toStateAutoComplete);
           }
         })
         .catch((err) => {
           console.log("err...", err);
           cogoToast.error("Something Went Wrong");
         });
-    } catch (error) { }
+    } catch (error) {}
   }
 
   getStates(countryData) {
@@ -2456,14 +2660,12 @@ class ShipmentCustom extends React.Component {
                 fromStateAutoComplete: res.data.length ? true : false,
               });
             }
-            // console.log("first = ", this.state.fromState.value);
             if (this.state.fromState.value == "") {
               this.state.fromStateAutoComplete = true;
             } else {
               this.state.fromStateAutoComplete = false;
               //  this.state.fromState = this.state.fromState.value;
             }
-            console.log("first = ", this.state.fromState);
             // if (this.state.fromState == "") {
             //   this.state.fromStateAutoComplete = true;
             // } else {
@@ -2501,7 +2703,7 @@ class ShipmentCustom extends React.Component {
           var tempFedexCity = [];
           tempFedexCity.push(res.data);
           if (type != "") {
-            var SelectedToCity = _.findIndex(tempFedexCity[0], function (
+            var SelectedToCity = _.findIndex(tempFedexCity[0], function(
               fedexCity
             ) {
               return fedexCity.CityName === type;
@@ -2536,7 +2738,7 @@ class ShipmentCustom extends React.Component {
           var tempFedexCity = [];
           tempFedexCity.push(res.data);
           if (type != "") {
-            var SelectedFromCity = _.findIndex(tempFedexCity[0], function (
+            var SelectedFromCity = _.findIndex(tempFedexCity[0], function(
               fedexCity
             ) {
               return fedexCity.CityName === type;
@@ -2629,7 +2831,6 @@ class ShipmentCustom extends React.Component {
                 AddressDetail: fromRes[0],
                 CountryName: selectedFromCountry.label,
               };
-              console.log("fromobj", fromOBJ);
               let toOBJ = {
                 AddressDetail: toRes[0],
                 CountryName: selectedToCountry.label,
@@ -2638,7 +2839,7 @@ class ShipmentCustom extends React.Component {
               // ======== fedex country validations ==============================
               var SelectedCountry = _.findIndex(
                 this.state.CountryList,
-                function (country) {
+                function(country) {
                   return country.CountryName === selectedFromCountry.label;
                 }
               );
@@ -2674,7 +2875,7 @@ class ShipmentCustom extends React.Component {
               //==================== To country fededx =============
               var SelectedToCountry = _.findIndex(
                 this.state.CountryList,
-                function (country) {
+                function(country) {
                   return country.CountryName === selectedToCountry.label;
                 }
               );
@@ -2708,28 +2909,51 @@ class ShipmentCustom extends React.Component {
                 this.getToFedexCityList(CityData, toRes[0].FedexCity);
               }
               // ====== fedex country validation end ==============================
+              //112
+              if (res.data[0].PickupProviderId === 68) {
+                this.setState({ pickuptimeshow: true });
+              }
               var pickupVendorName = {
-                value: res.data[0].PickupProviderId,
-                label: res.data[0].PickupProviderName,
+                value:
+                  res.data[0].PickupProviderId === null
+                    ? ""
+                    : res.data[0].PickupProviderId,
+                label:
+                  res.data[0].PickupProviderName === null
+                    ? ""
+                    : res.data[0].PickupProviderName,
               };
-
-              console.log("Testing Anshul = ", res.data[0]);
-              if (res.data[0].PickupDate != null) {
-                console.log("Helo Testing");
-                this.state.checkPickup = "1"
+              console.log("ppppp", pickupVendorName);
+              if (pickupVendorName.label === "") {
+                this.setState({ pickupDisable: true });
               } else {
-                console.log("Hello Test2");
-                this.state.checkPickup = "0"
+                this.setState({ pickupDisable: false });
+              }
+
+              if (res.data[0].PickupDate != null) {
+                this.state.checkPickup = "1";
+              } else {
+                this.state.checkPickup = "0";
               }
 
               if (pickupVendorName.label == "FedEx") {
                 var yesterday = Datetime.moment();
                 var before = new Date();
-                console.log("Current Day = ", before.getDay());
-
                 var addDayTotal = 0;
 
                 if (
+                  this.state.ServiceName.value === "SFL" &&
+                  this.state.ShipmentType.value === "Air" &&
+                  this.state.SubServiceName.value === "SFL Saver"
+                ) {
+                  if (before.getDay() == 0) {
+                    addDayTotal = 13;
+                  } else if (before.getDay() == 6) {
+                    addDayTotal = 14;
+                  } else {
+                    addDayTotal = 15;
+                  }
+                } else if (
                   this.state.ShipmentType.value != "Ground" &&
                   this.state.ShipmentType.value != "Ocean"
                 ) {
@@ -2753,18 +2977,22 @@ class ShipmentCustom extends React.Component {
                 }
 
                 if (addDayTotal != 0) {
-                  console.log(addDayTotal);
                   before = before.setDate(before.getDate() + addDayTotal);
-                  console.log("Before = ", before);
                   before = Datetime.moment(before);
-                  console.log(before);
                 }
-                console.log("Yesterday = ", yesterday);
-                valid1 = function (current) {
+                valid1 = function(current) {
+                  const usTimeZone = "America/New_York"; // Replace with the desired US time zone
+                  const usDate = momentTimezone(yesterday)
+                    .tz(CommonConfig.UStimezone)
+                    .format();
+
+                  console.log("usDate", usDate);
+
+                  console.log("before", before);
                   return (
                     current.day() !== 0 &&
                     current.day() !== 6 &&
-                    current.isAfter(yesterday) &&
+                    current.isAfter(usDate) &&
                     current.isBefore(before)
                   );
                 };
@@ -2775,8 +3003,6 @@ class ShipmentCustom extends React.Component {
                   "block";
                 document.getElementById("FedexDates").style.display = "none";
               }
-
-              console.log("ewsfromstate", fromRes[0].State);
               var FromState = {
                 value: fromRes[0].State,
                 label: fromRes[0].State,
@@ -2790,7 +3016,6 @@ class ShipmentCustom extends React.Component {
 
               this.getStates(selectedFromCountry);
               this.toStates(selectedToCountry);
-
               //   setTimeout(() => {
               this.setState({
                 FromAddress: fromRes[0],
@@ -2841,6 +3066,95 @@ class ShipmentCustom extends React.Component {
                 selectedFromCountry: selectedFromCountry,
                 selectedToCountry: selectedToCountry,
               });
+              debugger;
+              if (res.data[0].ReadyTime !== null) {
+                if (
+                  this.state.PickupVendorName.value === 68 &&
+                  (this.state.ShipmentType.value === "Ocean" ||
+                    this.state.ShipmentType.value === "Ground")
+                ) {
+                  this.setState({
+                    ReadyTimeList: CommonConfig.FedexGroundStarttime,
+                  });
+                } else if (
+                  this.state.PickupVendorName.value === 68 &&
+                  this.state.ShipmentType.value === "Air"
+                ) {
+                  this.setState({
+                    ReadyTimeList: CommonConfig.FedexExpressStarttime,
+                  });
+                } else {
+                  this.setState({ ReadyTimeList: CommonConfig.OtherStarttime });
+                }
+                var readylist = this.state.ReadyTimeList.filter((name) => {
+                  if (name.value === res.data[0].ReadyTime) {
+                    return name;
+                  }
+                });
+                var readytimelists = {
+                  value: readylist[0].label,
+
+                  label: readylist[0].view,
+                };
+                var ATimelist =
+                  this.state.PickupVendorName.value === 68 &&
+                  (this.state.ShipmentType.value === "Ocean" ||
+                    this.state.ShipmentType.value === "Ground")
+                    ? CommonConfig.FedexGroundAvailabletime
+                    : this.state.PickupVendorName.value === 68 &&
+                      this.state.ShipmentType.value === "Air"
+                    ? CommonConfig.FedexExpressAvailabletime
+                    : CommonConfig.OtherAvailabletime;
+                var namelist = [];
+                var avaliblelist = [];
+                var sumoflabel = 0;
+                debugger;
+                var namelabel = 0;
+                namelist = this.state.ReadyTimeList.filter((name) => {
+                  if (name.view === readylist[0].view) {
+                    return name;
+                  }
+                });
+                console.log("nnnn", namelist);
+                this.setState({ ReadyTime: namelist[0].value });
+
+                avaliblelist = ATimelist.filter((name) => {
+                  sumoflabel = parseInt(namelist[0].label + 2);
+                  namelabel = parseInt(name.label);
+                  if (namelabel >= sumoflabel) {
+                    return name;
+                  }
+                });
+                console.log("aaaa", avaliblelist);
+                this.setState({ AvailableTimeList: avaliblelist });
+
+                this.setState({
+                  ReadytimeView: readytimelists,
+                });
+              }
+              debugger;
+              if (res.data[0].AvailableTime !== null) {
+                var avaliblenamelist = this.state.AvailableTimeList.filter(
+                  (name) => {
+                    if (name.value === res.data[0].AvailableTime) {
+                      return name;
+                    }
+                  }
+                );
+                console.log("nnnn", avaliblenamelist);
+                var avalibletimelists = {
+                  value: avaliblenamelist[0].label,
+                  label: avaliblenamelist[0].view,
+                };
+                this.setState({
+                  availibletimeView: avalibletimelists,
+                  AvailableTime: res.data[0].AvailableTime,
+                });
+              }
+              this.setState({
+                NotesforPickup: res.data[0].SpecialInstruction,
+              });
+
               // }, 5000);
               // this.state.toState = toOBJ.AddressDetail.State;
               //this.state.fromState = fromOBJ.AddressDetail.State;
@@ -2858,7 +3172,7 @@ class ShipmentCustom extends React.Component {
             if (
               this.state.PackageType === "Envelop" ||
               this.state.selectedFromCountry.value ===
-              this.state.selectedToCountry.value
+                this.state.selectedToCountry.value
               // this.state.FromAddress.CountryID ===
               //   this.state.ToAddress.CountryID &&
               // (this.state.commercialList.length <= 0 ||
@@ -2888,14 +3202,13 @@ class ShipmentCustom extends React.Component {
   handleClickOpenTrack = (value) => {
     this.setState({ IsfedexLabelOpen: true });
     this.setState({ setTrackingValue: value });
-    
   };
 
-  handleClickOpenPickip = (value,value2) => {
+  handleClickOpenPickip = (value, value2) => {
     this.setState({ cancelTrackNumber: value });
     this.setState({
-      cancelPickupID:value2
-    })
+      cancelPickupID: value2,
+    });
     this.setState({ IsfedexLabelOpenPickup: true });
   };
 
@@ -2917,7 +3230,6 @@ class ShipmentCustom extends React.Component {
               ContainerID: "NULL",
               ContainerName: "Set To Null",
             };
-
             api
               .get("scheduleshipment/getPickupVendorList")
               .then((res2) => {
@@ -2926,7 +3238,6 @@ class ShipmentCustom extends React.Component {
                     VendorId: "NULL",
                     Name: "Set To Null",
                   };
-
                   // res2.data[res2.data.length] = {
                   //   VendorId: 0,
                   //   Name: "Not Available",
@@ -2935,6 +3246,7 @@ class ShipmentCustom extends React.Component {
                     ContainerNameList: res.data,
                     PickupVendorList: res2.data,
                   });
+                  console.log("pp44", res2.data);
                 }
               })
               .catch((err) => {
@@ -2965,13 +3277,13 @@ class ShipmentCustom extends React.Component {
         .catch((err) => {
           console.log("err..", err);
         });
-    } catch (error) { }
+    } catch (error) {}
   }
 
   selectChangeTab1 = (event, value, type) => {
     if (value != null) {
       if (type === "FromCountry") {
-        var SelectedCountry = _.findIndex(this.state.CountryList, function (
+        var SelectedCountry = _.findIndex(this.state.CountryList, function(
           country
         ) {
           return country.CountryName === value.label;
@@ -3012,7 +3324,7 @@ class ShipmentCustom extends React.Component {
         });
         this.getStates(value);
       } else if (type === "ToCountry") {
-        var SelectedCountry = _.findIndex(this.state.CountryList, function (
+        var SelectedCountry = _.findIndex(this.state.CountryList, function(
           country
         ) {
           return country.CountryName === value.label;
@@ -3169,6 +3481,14 @@ class ShipmentCustom extends React.Component {
         movingBackIndiaErr: false,
         movingBackIndiaHelperText: "",
       });
+    } else if (type === "NotesforPickup") {
+      if (event.target.value.length <= 29) {
+        this.setState({
+          NotesforPickup: event.target.value,
+          NotesforPickupErr: false,
+          NotesforPickupHelperText: "",
+        });
+      }
     } else if (type === "StayInIndia") {
       this.setState({
         StayInIndia: event.target.value,
@@ -3232,8 +3552,8 @@ class ShipmentCustom extends React.Component {
           yn.Description === "Yes"
             ? true
             : yn.Description === "No"
-              ? false
-              : yn.Description;
+            ? false
+            : yn.Description;
         return (
           <MenuItem classes={{ root: classes.selectMenuItem }} value={val}>
             {" "}
@@ -3248,8 +3568,8 @@ class ShipmentCustom extends React.Component {
           yn.Description === "Yes"
             ? true
             : yn.Description === "No"
-              ? false
-              : yn.Description;
+            ? false
+            : yn.Description;
         return (
           <MenuItem classes={{ root: classes.selectMenuItem }} value={val}>
             {" "}
@@ -3300,7 +3620,7 @@ class ShipmentCustom extends React.Component {
 
               countryShortName = _.filter(
                 data["results"][0]["address_components"],
-                function (data) {
+                function(data) {
                   return data.types[0] === "country";
                 }
               )[0].long_name;
@@ -3327,7 +3647,7 @@ class ShipmentCustom extends React.Component {
 
               var CityData = _.filter(
                 data["results"][0]["address_components"],
-                function (data) {
+                function(data) {
                   if (data.types[0] == "locality") {
                     return data.types[0] === "locality";
                   }
@@ -3336,7 +3656,7 @@ class ShipmentCustom extends React.Component {
 
               var CityData2 = _.filter(
                 data["results"][0]["address_components"],
-                function (data) {
+                function(data) {
                   if (data.types[0] == "neighborhood") {
                     return data.types[0] === "neighborhood";
                   }
@@ -3345,7 +3665,7 @@ class ShipmentCustom extends React.Component {
 
               var CityData3 = _.filter(
                 data["results"][0]["address_components"],
-                function (data) {
+                function(data) {
                   if (data.types[0] == "administrative_area_level_2") {
                     return data.types[0] === "administrative_area_level_2";
                   }
@@ -3386,14 +3706,14 @@ class ShipmentCustom extends React.Component {
 
               var state1 = _.filter(
                 data["results"][0]["address_components"],
-                function (data) {
+                function(data) {
                   return data.types[0] === "administrative_area_level_1";
                 }
               );
 
               var state2 = _.filter(
                 data["results"][0]["address_components"],
-                function (data) {
+                function(data) {
                   return data.types[0] === "administrative_area_level_2";
                 }
               );
@@ -3445,14 +3765,14 @@ class ShipmentCustom extends React.Component {
 
               countryShortName = _.filter(
                 data["results"][0]["address_components"],
-                function (data) {
+                function(data) {
                   return data.types[0] === "country";
                 }
               )[0].long_name;
 
               if (
                 city == "" &&
-                _.filter(data["results"][0]["address_components"], function (
+                _.filter(data["results"][0]["address_components"], function(
                   data
                 ) {
                   return data.types[0] === "locality";
@@ -3460,13 +3780,13 @@ class ShipmentCustom extends React.Component {
               ) {
                 city = _.filter(
                   data["results"][0]["address_components"],
-                  function (data) {
+                  function(data) {
                     return data.types[0] === "locality";
                   }
                 )[0].short_name;
               } else if (
                 city == "" &&
-                _.filter(data["results"][0]["address_components"], function (
+                _.filter(data["results"][0]["address_components"], function(
                   data
                 ) {
                   return data.types[0] === "administrative_area_level_3";
@@ -3474,13 +3794,13 @@ class ShipmentCustom extends React.Component {
               ) {
                 city = _.filter(
                   data["results"][0]["address_components"],
-                  function (data) {
+                  function(data) {
                     return data.types[0] === "administrative_area_level_3";
                   }
                 )[0].short_name;
               } else if (
                 city == "" &&
-                _.filter(data["results"][0]["address_components"], function (
+                _.filter(data["results"][0]["address_components"], function(
                   data
                 ) {
                   return data.types[0] === "political";
@@ -3488,13 +3808,13 @@ class ShipmentCustom extends React.Component {
               ) {
                 city = _.filter(
                   data["results"][0]["address_components"],
-                  function (data) {
+                  function(data) {
                     return data.types[0] === "political";
                   }
                 )[0].short_name;
               } else if (
                 city == "" &&
-                _.filter(data["results"][0]["address_components"], function (
+                _.filter(data["results"][0]["address_components"], function(
                   data
                 ) {
                   return data.types[0] === "neighborhood";
@@ -3502,13 +3822,13 @@ class ShipmentCustom extends React.Component {
               ) {
                 city = _.filter(
                   data["results"][0]["address_components"],
-                  function (data) {
+                  function(data) {
                     return data.types[0] === "neighborhood";
                   }
                 )[0].short_name;
               } else if (
                 city == "" &&
-                _.filter(data["results"][0]["address_components"], function (
+                _.filter(data["results"][0]["address_components"], function(
                   data
                 ) {
                   return data.types[0] === "administrative_area_level_2";
@@ -3516,13 +3836,13 @@ class ShipmentCustom extends React.Component {
               ) {
                 city = _.filter(
                   data["results"][0]["address_components"],
-                  function (data) {
+                  function(data) {
                     return data.types[0] === "administrative_area_level_2";
                   }
                 )[0].long_name;
               } else if (
                 city == "" &&
-                _.filter(data["results"][0]["address_components"], function (
+                _.filter(data["results"][0]["address_components"], function(
                   data
                 ) {
                   return data.types[0] === "administrative_area_level_1";
@@ -3530,7 +3850,7 @@ class ShipmentCustom extends React.Component {
               ) {
                 city = _.filter(
                   data["results"][0]["address_components"],
-                  function (data) {
+                  function(data) {
                     return data.types[0] === "administrative_area_level_1";
                   }
                 )[0].long_name;
@@ -3540,7 +3860,7 @@ class ShipmentCustom extends React.Component {
 
               var state = _.filter(
                 data["results"][0]["address_components"],
-                function (data) {
+                function(data) {
                   return data.types[0] === "administrative_area_level_1";
                 }
               )[0].long_name;
@@ -3632,7 +3952,7 @@ class ShipmentCustom extends React.Component {
 
               countryShortName = _.filter(
                 data["results"][0]["address_components"],
-                function (data) {
+                function(data) {
                   return data.types[0] === "country";
                 }
               )[0].long_name;
@@ -3647,7 +3967,7 @@ class ShipmentCustom extends React.Component {
 
               var CityData = _.filter(
                 data["results"][0]["address_components"],
-                function (data) {
+                function(data) {
                   if (data.types[0] == "locality") {
                     return data.types[0] === "locality";
                   }
@@ -3656,7 +3976,7 @@ class ShipmentCustom extends React.Component {
 
               var CityData2 = _.filter(
                 data["results"][0]["address_components"],
-                function (data) {
+                function(data) {
                   if (data.types[0] == "neighborhood") {
                     return data.types[0] === "neighborhood";
                   }
@@ -3665,7 +3985,7 @@ class ShipmentCustom extends React.Component {
 
               var CityData3 = _.filter(
                 data["results"][0]["address_components"],
-                function (data) {
+                function(data) {
                   if (data.types[0] == "administrative_area_level_2") {
                     return data.types[0] === "administrative_area_level_2";
                   }
@@ -3706,7 +4026,7 @@ class ShipmentCustom extends React.Component {
 
               var state1 = _.filter(
                 data["results"][0]["address_components"],
-                function (data) {
+                function(data) {
                   return data.types[0] === "administrative_area_level_1";
                 }
               );
@@ -3721,7 +4041,7 @@ class ShipmentCustom extends React.Component {
               // );
               var state2 = _.filter(
                 data["results"][0]["address_components"],
-                function (data) {
+                function(data) {
                   return data.types[0] === "administrative_area_level_2";
                 }
               );
@@ -3740,8 +4060,6 @@ class ShipmentCustom extends React.Component {
               // };
 
               var SelectedState = { value: state, label: state };
-              console.log("sssssss3459: ", state);
-              console.log("sssssss3460: ", SelectedState);
 
               if (countryShortName === this.state.selectedToCountry.label) {
                 this.setState({
@@ -3759,7 +4077,6 @@ class ShipmentCustom extends React.Component {
                       ? SelectedCity
                       : this.state.tempToCity,
                 });
-                console.log("666666", this.state.toStateAutoComplete);
               } else {
                 this.setState({
                   toCityAutoComplete: false,
@@ -3770,7 +4087,6 @@ class ShipmentCustom extends React.Component {
                   toState: "",
                   toCity: "",
                 });
-                console.log("55555", this.state.toStateAutoComplete);
               }
             } else if (data["results"][0]) {
               var FinalCity = [];
@@ -3779,14 +4095,14 @@ class ShipmentCustom extends React.Component {
 
               countryShortName = _.filter(
                 data["results"][0]["address_components"],
-                function (data) {
+                function(data) {
                   return data.types[0] === "country";
                 }
               )[0].long_name;
 
               if (
                 city == "" &&
-                _.filter(data["results"][0]["address_components"], function (
+                _.filter(data["results"][0]["address_components"], function(
                   data
                 ) {
                   return data.types[0] === "locality";
@@ -3794,13 +4110,13 @@ class ShipmentCustom extends React.Component {
               ) {
                 city = _.filter(
                   data["results"][0]["address_components"],
-                  function (data) {
+                  function(data) {
                     return data.types[0] === "locality";
                   }
                 )[0].short_name;
               } else if (
                 city == "" &&
-                _.filter(data["results"][0]["address_components"], function (
+                _.filter(data["results"][0]["address_components"], function(
                   data
                 ) {
                   return data.types[0] === "administrative_area_level_3";
@@ -3808,13 +4124,13 @@ class ShipmentCustom extends React.Component {
               ) {
                 city = _.filter(
                   data["results"][0]["address_components"],
-                  function (data) {
+                  function(data) {
                     return data.types[0] === "administrative_area_level_3";
                   }
                 )[0].short_name;
               } else if (
                 city == "" &&
-                _.filter(data["results"][0]["address_components"], function (
+                _.filter(data["results"][0]["address_components"], function(
                   data
                 ) {
                   return data.types[0] === "political";
@@ -3822,13 +4138,13 @@ class ShipmentCustom extends React.Component {
               ) {
                 city = _.filter(
                   data["results"][0]["address_components"],
-                  function (data) {
+                  function(data) {
                     return data.types[0] === "political";
                   }
                 )[0].short_name;
               } else if (
                 city == "" &&
-                _.filter(data["results"][0]["address_components"], function (
+                _.filter(data["results"][0]["address_components"], function(
                   data
                 ) {
                   return data.types[0] === "neighborhood";
@@ -3836,13 +4152,13 @@ class ShipmentCustom extends React.Component {
               ) {
                 city = _.filter(
                   data["results"][0]["address_components"],
-                  function (data) {
+                  function(data) {
                     return data.types[0] === "neighborhood";
                   }
                 )[0].short_name;
               } else if (
                 city == "" &&
-                _.filter(data["results"][0]["address_components"], function (
+                _.filter(data["results"][0]["address_components"], function(
                   data
                 ) {
                   return data.types[0] === "administrative_area_level_2";
@@ -3850,13 +4166,13 @@ class ShipmentCustom extends React.Component {
               ) {
                 city = _.filter(
                   data["results"][0]["address_components"],
-                  function (data) {
+                  function(data) {
                     return data.types[0] === "administrative_area_level_2";
                   }
                 )[0].long_name;
               } else if (
                 city == "" &&
-                _.filter(data["results"][0]["address_components"], function (
+                _.filter(data["results"][0]["address_components"], function(
                   data
                 ) {
                   return data.types[0] === "administrative_area_level_1";
@@ -3864,7 +4180,7 @@ class ShipmentCustom extends React.Component {
               ) {
                 city = _.filter(
                   data["results"][0]["address_components"],
-                  function (data) {
+                  function(data) {
                     return data.types[0] === "administrative_area_level_1";
                   }
                 )[0].long_name;
@@ -3874,11 +4190,10 @@ class ShipmentCustom extends React.Component {
 
               var state = _.filter(
                 data["results"][0]["address_components"],
-                function (data) {
+                function(data) {
                   return data.types[0] === "administrative_area_level_1";
                 }
               )[0].long_name;
-              console.log("statte", state);
               FinalCity.push({
                 City_code: city,
                 Name: city,
@@ -3890,8 +4205,6 @@ class ShipmentCustom extends React.Component {
               };
 
               var SelectedState = { value: state, label: state };
-              console.log("sssssss3604: ", state);
-              console.log("sssssss3605: ", SelectedState);
               if (countryShortName === this.state.selectedToCountry.label) {
                 this.setState({
                   toCityAutoComplete: FinalCity.length ? true : false,
@@ -3907,7 +4220,6 @@ class ShipmentCustom extends React.Component {
                     : SelectedCity,
                   ToFedExSelectedCity: SelectedCity,
                 });
-                console.log("33333", this.state.toStateAutoComplete);
               } else {
                 this.setState({
                   toCityAutoComplete: false,
@@ -3918,7 +4230,6 @@ class ShipmentCustom extends React.Component {
                   toState: "",
                   toCity: "",
                 });
-                console.log("2222222", this.state.toStateAutoComplete);
               }
             }
             this.setState({ Moveupdatefromzip: true });
@@ -3934,7 +4245,6 @@ class ShipmentCustom extends React.Component {
               // toState: "",
               // toCity: "",
             });
-            console.log("111111", this.state.toCity);
           }
         });
     }
@@ -4063,17 +4373,26 @@ class ShipmentCustom extends React.Component {
         .then((res) => {
           if (res.success) {
             this.showLoader();
+            console.log("RES123 = ", res);
             var l = 1;
             let cftTotal = 0;
             let totalChargableWeight = 0;
+            let totalInsValue = 0;
+            let insval = 0;
             res.data.map((Obj) => {
               Obj.Index = l;
               Obj.InsuredValue = parseFloat(Obj.InsuredValue).toFixed(2);
               cftTotal += Obj.CFT;
               totalChargableWeight = totalChargableWeight + Obj.ChargableWeight;
+              insval = parseFloat(Obj.InsuredValue);
+              totalInsValue = totalInsValue + insval;
+              console.log("typesd= ", typeof Obj.InsuredValue);
               l++;
               return Obj;
             });
+
+            this.state.totalInsuredValue = totalInsValue;
+            console.log("totalInsValue = ", totalInsValue);
 
             if (res.data.length > 0) {
               this.setState({ isPackageDetailsVisible: true });
@@ -4087,7 +4406,7 @@ class ShipmentCustom extends React.Component {
                 PackageType: res.data[0] ? res.data[0].PackageType : "Package",
                 TotalPackages: res.data[0] ? res.data[0].TotalPackages : 0,
               },
-              function () {
+              function() {
                 this.Calculate();
               }
             );
@@ -4105,14 +4424,19 @@ class ShipmentCustom extends React.Component {
     if (type === "InvoiceDate") {
       let paymentInvoiceList = this.state.PaymentList;
       let idx = paymentInvoiceList.findIndex((x) => x.Index === index);
-      paymentInvoiceList[idx][type] = date;
+      paymentInvoiceList[idx][type] = moment(date).format(
+        CommonConfig.dateFormat.dateOnly
+      );
       this.setState({ PaymentList: paymentInvoiceList });
       this.getLatestInvoiceDate();
     } else if (type === "PaymentIssuedDate" || type === "DatePaid") {
       let paymentIssued = this.state.paymentIssued;
       let idx = paymentIssued.findIndex((x) => x.Index === index);
-      paymentIssued[idx][type] = date;
+      paymentIssued[idx][type] = moment(date).format(
+        CommonConfig.dateFormat.dateOnly
+      );
       this.setState({ paymentIssued: paymentIssued });
+      console.log("paymentissued", this.state.paymentIssued);
     } else if (type === "PaymentReceivedDate") {
       let paymentReceived = this.state.paymentReceived;
       let idx = paymentReceived.findIndex((x) => x.Index === index);
@@ -4170,7 +4494,6 @@ class ShipmentCustom extends React.Component {
   };
 
   CostCalculator = (type, IsFalse) => {
-    // console.log("IsFalse.....",IsFalse);
     if (type === "Invoice") {
       let paymentList = this.state.PaymentList.filter(
         (x) => x.Status === "Active"
@@ -4239,7 +4562,7 @@ class ShipmentCustom extends React.Component {
         IsAESOpen: false,
         IsAlreadyAESFilled: true,
       },
-      function () {
+      function() {
         if (this.state.saveClicked.saveClick) {
           this.handleSave(this.state.saveClicked.redirect);
         } else {
@@ -4348,7 +4671,7 @@ class ShipmentCustom extends React.Component {
         PackageList[idx][type] = value;
       }
     }
-    this.setState({ PackageList: PackageList }, function () {
+    this.setState({ PackageList: PackageList }, function() {
       this.Calculate();
     });
   };
@@ -4439,7 +4762,7 @@ class ShipmentCustom extends React.Component {
           totalCFT: TotalCFT,
           totalInsuredValue: TotalInsuredvalue,
         },
-        function () {
+        function() {
           this.hideLoader();
         }
       );
@@ -4480,6 +4803,20 @@ class ShipmentCustom extends React.Component {
         >
           {" "}
           {content.label}{" "}
+        </MenuItem>
+      );
+    });
+  };
+
+  AvailableTimeList = () => {
+    return this.state.AvailableTimeList.map((content) => {
+      return (
+        <MenuItem
+          classes={{ root: classes.selectMenuItem }}
+          value={content.value}
+        >
+          {" "}
+          {content.view}{" "}
         </MenuItem>
       );
     });
@@ -4831,7 +5168,7 @@ class ShipmentCustom extends React.Component {
                 {/* ) : null} */}
                 {this.state.PackageList.filter((x) => x.Status === "Active")
                   .length ===
-                  idx + 1 ? (
+                idx + 1 ? (
                   <Button
                     justIcon
                     color="facebook"
@@ -4870,7 +5207,6 @@ class ShipmentCustom extends React.Component {
           this.openConfirmAllClear();
         } else {
           // let useraccess = JSON.parse(localStorage.getItem("loggedInUserData"));
-          // console.log("useraccess", this.state.useraccess.userModuleAccess[15]);
           if (
             this.state.useraccess.userModuleAccess[15].ModuleID === 18 &&
             this.state.useraccess.userModuleAccess[15].WriteAccess === 1 &&
@@ -5084,7 +5420,6 @@ class ShipmentCustom extends React.Component {
   };
 
   viewCommercialInvoice = () => {
-    console.log("commercial", this.state.commercialList);
     return this.state.commercialList
       .filter((x) => x.Status === "Active")
       .map((commercial, idx) => {
@@ -5220,7 +5555,7 @@ class ShipmentCustom extends React.Component {
 
               {this.state.commercialList.filter((x) => x.Status === "Active")
                 .length ===
-                idx + 1 ? (
+              idx + 1 ? (
                 <Button
                   justIcon
                   color="facebook"
@@ -5388,7 +5723,7 @@ class ShipmentCustom extends React.Component {
             let printInvoiceData = {
               ShippingID:
                 this.props.location.state &&
-                  this.props.location.state.ShipppingID
+                this.props.location.state.ShipppingID
                   ? this.props.location.state.ShipppingID
                   : null,
               InvoiceData: this.state.DocumentInvoiceData,
@@ -5574,6 +5909,7 @@ class ShipmentCustom extends React.Component {
     const row = {
       ServiceDescription: "",
       InvoiceDate: moment().toDate(),
+
       Descriptiom: "",
       Quantity: 0,
       Amount: parseFloat(0).toFixed(2),
@@ -5588,7 +5924,9 @@ class ShipmentCustom extends React.Component {
 
   addRowPaymentReceived = () => {
     const row = {
-      PaymentReceivedDate: moment().toDate(),
+      PaymentReceivedDate: momentTimezone()
+        .tz(CommonConfig.UStimezone)
+        .toDate(),
       PaymentType: "",
       Amount: parseFloat(0).toFixed(2),
       ConfirmationNumber: "",
@@ -5603,7 +5941,9 @@ class ShipmentCustom extends React.Component {
 
   addRowPaymentIssued = () => {
     const row = {
-      PaymentIssuedDate: moment().toDate(),
+      PaymentIssuedDate: momentTimezone()
+        .tz(CommonConfig.UStimezone)
+        .toDate(),
       VendorName: "",
       InvoiceNumber: "",
       ConfirmationNumber: "",
@@ -5849,7 +6189,11 @@ class ShipmentCustom extends React.Component {
           value: payment.ServiceDescription,
           label: payment.ServiceDescription,
         };
+
         var invDate = new Date(payment.InvoiceDate);
+        // var invDate = momentTimezone(payment.InvoiceDate)
+        //   .tz(CommonConfig.UStimezone)
+        //   .format(CommonConfig.dateFormat.dateTime);
         invDate.setDate(invDate.getDate() + 7);
 
         this.state.InvoiceDueDate = invDate;
@@ -5858,7 +6202,7 @@ class ShipmentCustom extends React.Component {
             <td className="wd-date">
               <div className="package-dateinput">
                 {this.state.viewAllClear === false ||
-                  this.state.hasInvoiceAccess === false ? (
+                this.state.hasInvoiceAccess === false ? (
                   <Datetime
                     dateFormat={"MM/DD/YYYY"}
                     timeFormat={false}
@@ -5986,10 +6330,10 @@ class ShipmentCustom extends React.Component {
               {this.state.PaymentList.filter((x) => x.Status === "Active")
                 .length ===
                 idx + 1 &&
-                !this.state.viewAllClear &&
-                // CommonConfig.getUserAccess("Shipment").DeleteAccess === 1 &&
-                // CommonConfig.getUserAccess("Shipment").WriteAccess === 1
-                !this.state.hasInvoiceAccess ? (
+              !this.state.viewAllClear &&
+              // CommonConfig.getUserAccess("Shipment").DeleteAccess === 1 &&
+              // CommonConfig.getUserAccess("Shipment").WriteAccess === 1
+              !this.state.hasInvoiceAccess ? (
                 <Button
                   justIcon
                   color="facebook"
@@ -6085,6 +6429,7 @@ class ShipmentCustom extends React.Component {
                 <Datetime
                   dateFormat={"MM/DD/YYYY"}
                   timeFormat={false}
+                  //  value={payment.DatePaid}
                   value={payment.DatePaid}
                   onChange={(date) =>
                     this.dateChange(date, "DatePaid", payment.Index)
@@ -6153,8 +6498,8 @@ class ShipmentCustom extends React.Component {
               {this.state.paymentIssued.filter((x) => x.Status === "Active")
                 .length ===
                 idx + 1 ||
-                this.state.paymentIssued.filter((x) => x.Status === "Active")
-                  .length === 0 ? (
+              this.state.paymentIssued.filter((x) => x.Status === "Active")
+                .length === 0 ? (
                 <Button
                   justIcon
                   color="facebook"
@@ -6194,7 +6539,7 @@ class ShipmentCustom extends React.Component {
         }
         const CardNumber = condata
           ? "XXXX XXXX XXXX " +
-          method.CardNumber.toString().slice(method.CardNumber.length - 4)
+            method.CardNumber.toString().slice(method.CardNumber.length - 4)
           : method.CardNumber;
         const PaymentStatus = {
           value: method.PaymentStatus,
@@ -6374,7 +6719,7 @@ class ShipmentCustom extends React.Component {
               ) : null}
 
               {this.state.Access.WriteAccess === 1 &&
-                this.state.IsCardTransactionZero === false ? (
+              this.state.IsCardTransactionZero === false ? (
                 <Button
                   justIcon
                   color="facebook"
@@ -6549,7 +6894,7 @@ class ShipmentCustom extends React.Component {
         }
         const CardNumber = condata
           ? "XXXX XXXX XXXX" +
-          payment.Number.toString().slice(payment.Number.length - 4)
+            payment.Number.toString().slice(payment.Number.length - 4)
           : payment.Number;
         return (
           <tr>
@@ -6650,7 +6995,7 @@ class ShipmentCustom extends React.Component {
             </td>
             <td className="pck-action-column">
               {this.state.useraccess.userModuleAccess[15].WriteAccess === 1 &&
-                this.state.useraccess.userModuleAccess[15].DeleteAccess === 1 ? (
+              this.state.useraccess.userModuleAccess[15].DeleteAccess === 1 ? (
                 // {/* {!ReadOnly && !viewAllClear ? ( */}
                 <Button
                   justIcon
@@ -6664,8 +7009,8 @@ class ShipmentCustom extends React.Component {
               {this.state.paymentReceived.filter((x) => x.Status === "Active")
                 .length ===
                 idx + 1 &&
-                this.state.useraccess.userModuleAccess[15].WriteAccess === 1 &&
-                this.state.useraccess.userModuleAccess[15].DeleteAccess === 1 ? (
+              this.state.useraccess.userModuleAccess[15].WriteAccess === 1 &&
+              this.state.useraccess.userModuleAccess[15].DeleteAccess === 1 ? (
                 // !ReadOnly &&
                 // !viewAllClear ? (
                 <Button
@@ -6763,7 +7108,9 @@ class ShipmentCustom extends React.Component {
   addnewRowTrackingNumber = () => {
     const row = {
       TrackingID: "",
-      TrackingDate: moment().toDate(),
+      TrackingDate: momentTimezone()
+        .tz(CommonConfig.UStimezone)
+        .toDate(),
       TrackingStatus: "",
       Carrier: "",
       Type: "",
@@ -6852,15 +7199,21 @@ class ShipmentCustom extends React.Component {
   addnewRowTrackingManual = () => {
     const row = {
       ShippingManualTrackingID: null,
-      PickupDate: moment().toDate(),
+      PickupDate: momentTimezone()
+        .tz(CommonConfig.UStimezone)
+        .toDate(),
+      //PickupDate: moment().toDate(),
       PickupTime: moment().format(CommonConfig.dateFormat.timeOnly),
+
       TrackingStatus: "",
       Type: "",
       Updates: "",
       Status: "Active",
       CreatedOn: moment().toDate(),
+
       CreatedByName: CommonConfig.loggedInUserData().Name,
       Index: this.state.trackingManualList.length + 1,
+      ustime: true,
     };
     this.setState({
       trackingManualList: [...this.state.trackingManualList, row],
@@ -6917,9 +7270,17 @@ class ShipmentCustom extends React.Component {
                 id="proposaltype"
                 type="number"
                 inputProps={{
-                  value: moment(trackingManual.CreatedOn).format(
-                    CommonConfig.dateFormat.time12Only
-                  ),
+                  value:
+                    trackingManual.ustime === true
+                      ? momentTimezone(trackingManual.CreatedOn, "HH:mm:ss")
+                          .tz(CommonConfig.UStimezone)
+                          .format(CommonConfig.dateFormat.time12Only)
+                      : moment(trackingManual.CreatedOn).format(
+                          CommonConfig.dateFormat.time12Only
+                        ),
+                  // value: momentTimezone(trackingManual.CreatedOn, "HH:mm:ss")
+                  //   .tz(CommonConfig.UStimezone)
+                  //   .format(CommonConfig.dateFormat.time12Only),
                   disabled: true,
                 }}
               />
@@ -6929,6 +7290,7 @@ class ShipmentCustom extends React.Component {
                 <Datetime
                   dateFormat={"MM/DD/YYYY"}
                   timeFormat={false}
+                  // value={moment(trackingManual.PickupDate)}
                   value={moment(trackingManual.PickupDate)}
                   onChange={(date) =>
                     this.dateChange(date, "PickupDate", trackingManual.Index)
@@ -6945,9 +7307,9 @@ class ShipmentCustom extends React.Component {
                 id="proposaltype"
                 type="number"
                 inputProps={{
-                  value: moment(trackingManual.PickupTime, "HH:mm:ss").format(
-                    CommonConfig.dateFormat.time12Only
-                  ),
+                  value: momentTimezone(trackingManual.PickupTime, "HH:mm:ss")
+                    .tz(CommonConfig.UStimezone)
+                    .format(CommonConfig.dateFormat.time12Only),
                   onChange: (event) =>
                     this.handleManualTrackingChange(
                       event,
@@ -7003,7 +7365,7 @@ class ShipmentCustom extends React.Component {
               {this.state.trackingManualList.filter(
                 (x) => x.Status === "Active"
               ).length ===
-                idx + 1 ? (
+              idx + 1 ? (
                 <Button
                   justIcon
                   color="facebook"
@@ -7059,8 +7421,8 @@ class ShipmentCustom extends React.Component {
                     // ),
                     value: trackingnumber.TrackingDate
                       ? moment(trackingnumber.TrackingDate).format(
-                        CommonConfig.dateFormat.dateOnly
-                      )
+                          CommonConfig.dateFormat.dateOnly
+                        )
                       : "",
                   }}
                 />
@@ -7139,10 +7501,10 @@ class ShipmentCustom extends React.Component {
             </td>
             <td className="pck-action-column">
               {/* {idx !== 0 ? ( */}
-             
+
               {this.state.Access.DeleteAccess &&
-                trackingnumber.TrackingStatus === "Active" &&
-                moment(new Date()).format(CommonConfig.dateFormat.dateOnly) <=
+              trackingnumber.TrackingStatus === "Active" &&
+              moment(new Date()).format(CommonConfig.dateFormat.dateOnly) <=
                 moment(trackingnumber.CreatedOn)
                   .add(2, "days")
                   .format(CommonConfig.dateFormat.dateOnly) ? (
@@ -7151,7 +7513,9 @@ class ShipmentCustom extends React.Component {
                   color="danger"
                   className="Plus-btn delete-icon"
                   // onClick={this.handleClickOpen(trackingnumber.TrackingID)}
-                  onClick={() => this.handleClickOpenTrack(trackingnumber.TrackingID)}
+                  onClick={() =>
+                    this.handleClickOpenTrack(trackingnumber.TrackingID)
+                  }
                 >
                   <i className={"fas fa-trash"} />
                 </Button>
@@ -7168,7 +7532,7 @@ class ShipmentCustom extends React.Component {
               {this.state.trackingNumberList.filter(
                 (x) => x.Status === "Active"
               ).length ===
-                idx + 1 ? (
+              idx + 1 ? (
                 <Button
                   justIcon
                   color="facebook"
@@ -7190,40 +7554,88 @@ class ShipmentCustom extends React.Component {
       });
   };
   viewPickupCofirmation = () => {
-    console.log("this.state.TrackingServiceList = ", this.state.PickupTrackingList);
-    console.log("this.state.TrackingServiceList = ", this.state.PickupTrackingList.length);
-
     if (this.state.PickupTrackingList.length == 0) {
       return (
         <tr>
-          <td className="wd-num textMessage" colSpan={7}>Please generate lable to schedule pickup</td>
+          <td className="wd-num textMessage" colSpan={7}>
+            Please generate lable to schedule pickup
+          </td>
         </tr>
       );
-
     } else {
-
       const serviceName = this.state.TrackingServiceList.map((type) => {
         return { value: type.MainServiceName, label: type.MainServiceName };
       });
 
       const PickupTrackingListData = this.state.PickupTrackingList;
-      return PickupTrackingListData
-       
-        .map((trackingnumber, idx) => {
-          console.log("TrackTest = ", trackingnumber);
-         
-          return (
-            <tr>
-              <td className="wd-num">
+      return PickupTrackingListData.map((trackingnumber, idx) => {
+        return (
+          <tr>
+            <td className="wd-num">
+              <CustomInput
+                id="proposaltype"
+                inputProps={{
+                  value: idx + 1,
+                }}
+              />
+            </td>
+            {/* <td className="wd-date">
+              <div className="package-dateinput">
                 <CustomInput
                   id="proposaltype"
                   inputProps={{
-                    value: idx + 1,
+                    disabled: true,
+                    // value: moment(trackingnumber.TrackingDate).format(
+                    //   CommonConfig.dateFormat.dateOnly
+                    // ),
+                    value: trackingnumber.FedexPickup
+                      ? moment(trackingnumber.FedexPickup).format(
+                          CommonConfig.dateFormat.dateOnly
+                        )
+                      : "",
                   }}
                 />
-              </td>
-              <td className="wd-date">
-                <div className="package-dateinput">
+              </div>
+            </td> */}
+            <td style={{ width: 167 }} className="input-full">
+              <CustomInput
+                id="proposaltype"
+                type="number"
+                inputProps={{
+                  value: trackingnumber.TrackingID,
+                  onChange: (event) =>
+                    this.handlePickupChangetrackingNumber(
+                      event,
+                      "TrackingID",
+                      trackingnumber.Index
+                    ),
+                }}
+              />
+            </td>
+            <td>
+              <div className="package-select">
+                {trackingnumber.PickupConfirmation ? (
+                  <CustomInput
+                    id="proposaltype"
+                    type="number"
+                    inputProps={{
+                      value: trackingnumber.PickupConfirmation,
+                      ReadOnly: true,
+                      disabled: true,
+                      // onChange: (event) =>
+                      //   this.handleChangetrackingNumber(
+                      //     event,
+                      //     "Comments",
+                      //     trackingnumber.Index
+                      //   ),
+                    }}
+                  />
+                ) : null}
+              </div>
+            </td>
+            <td>
+              <div className="package-select">
+                {trackingnumber.PickupConfirmation ? (
                   <CustomInput
                     id="proposaltype"
                     inputProps={{
@@ -7233,115 +7645,83 @@ class ShipmentCustom extends React.Component {
                       // ),
                       value: trackingnumber.FedexPickup
                         ? moment(trackingnumber.FedexPickup).format(
-                          CommonConfig.dateFormat.dateOnly
-                        )
+                            CommonConfig.dateFormat.dateOnly
+                          )
                         : "",
                     }}
                   />
-                </div>
-              </td>
-              <td style={{ width: 167 }} className="input-full">
+                ) : null}
+              </div>
+            </td>
+            <td className="">
+              <div className="width-full">
                 <CustomInput
                   id="proposaltype"
                   type="number"
                   inputProps={{
-                    value: trackingnumber.TrackingID,
+                    value: trackingnumber.Comments,
                     onChange: (event) =>
-                      this.handlePickupChangetrackingNumber(
+                      this.handleChangetrackingNumber(
                         event,
-                        "TrackingID",
+                        "Comments",
                         trackingnumber.Index
                       ),
                   }}
                 />
-              </td>
-              <td>
-                <div className="package-select">
-                  {trackingnumber.PickupConfirmation ? (
-                    <CustomInput
-                      id="proposaltype"
-                      type="number"
-                      inputProps={{
-                        value: trackingnumber.PickupConfirmation,
-                        ReadOnly: true,
-                        disabled: true,
-                        // onChange: (event) =>
-                        //   this.handleChangetrackingNumber(
-                        //     event,
-                        //     "Comments",
-                        //     trackingnumber.Index
-                        //   ),
-                      }}
-                    />
-                  ) : null}
+              </div>
+            </td>
+            <td>
+              <div className="width-full">
+                <CustomInput
+                  id="proposaltype"
+                  type="number"
+                  inputProps={{
+                    value: trackingnumber.PickupStatus,
+                  }}
+                />
+              </div>
+            </td>
+            <td className="pck-action-column">
+              {/* {idx !== 0 ? ( */}
 
-                </div>
-              </td>
-              <td className="">
-                <div className="width-full">
-                  <CustomInput
-                    id="proposaltype"
-                    type="number"
-                    inputProps={{
-                      value: trackingnumber.Comments,
-                      onChange: (event) =>
-                        this.handleChangetrackingNumber(
-                          event,
-                          "Comments",
-                          trackingnumber.Index
-                        ),
-                    }}
-                  />
-                </div>
-              </td>
-              <td>
-                <div className="width-full">
-                  <CustomInput
-                    id="proposaltype"
-                    type="number"
-                    inputProps={{
-                      value: trackingnumber.PickupStatus,
+              {this.state.Access.DeleteAccess &&
+              (trackingnumber.PickupConfirmation != null &&
+                trackingnumber.PickupConfirmation != "") ? (
+                <Button
+                  justIcon
+                  color="danger"
+                  className="Plus-btn delete-icon"
+                  onClick={() =>
+                    this.handleClickOpenPickip(
+                      trackingnumber.TrackingID,
+                      trackingnumber.ShippingPickupID
+                    )
+                  }
+                >
+                  <i className={"fas fa-trash"} />
+                </Button>
+              ) : null}
 
-                    }}
-                  />
-                </div>
-              </td>
-              <td className="pck-action-column">
-
-
-                {/* {idx !== 0 ? ( */}
-            
-                {this.state.Access.DeleteAccess &&
-                   (trackingnumber.PickupConfirmation != null && trackingnumber.PickupConfirmation != "") ? (
+              {trackingnumber.PickupConfirmation == "" ||
+              trackingnumber.PickupConfirmation == null ? (
+                <Tooltip title="Generate Pickup" arrow>
                   <Button
                     justIcon
-                    color="danger"
-                    className="Plus-btn delete-icon"
+                    color="primary"
+                    className="Plus-btn"
                     onClick={() =>
-                      this.handleClickOpenPickip(trackingnumber.TrackingID,trackingnumber.ShippingPickupID)
+                      this.handlePickupSchedule(
+                        trackingnumber.TrackingID,
+                        trackingnumber.PickupStatus,
+                        trackingnumber.ShippingPickupID
+                      )
                     }
                   >
-                    <i className={"fas fa-trash"} />
+                    <i className={"fas fa-check"} />
                   </Button>
-                ) : null}
-                
-                {trackingnumber.PickupConfirmation == "" || trackingnumber.PickupConfirmation == null ? (
-                  <Tooltip title="Generate Pickup" arrow>
-                    <Button
-                      justIcon
-                      color="primary"
-                      className="Plus-btn"
-
-                      onClick={() =>
-                        this.handlePickupSchedule(trackingnumber.TrackingID,trackingnumber.PickupStatus,trackingnumber.ShippingPickupID)
-                      }
-
-                    >
-                      <i className={"fas fa-check"} />
-                    </Button>
-                  </Tooltip>
-                ) : null}
-                {/* <Button
+                </Tooltip>
+              ) : null}
+              {/* <Button
                   justIcon
                   color="danger"
                   className="Plus-btn"
@@ -7349,34 +7729,30 @@ class ShipmentCustom extends React.Component {
                 >
                   <i className={"fas fa-minus"} />
                 </Button> */}
-                {/* ) : null} */}
-                {PickupTrackingListData.filter(
-                  (x) => x.Status === "Active"
-                ).length ===
-                  idx + 1 ? (
-                  <Button
-                    justIcon
-                    color="facebook"
-                    onClick={() => this.addnewRowPickupTrackingNumber()}
-                    className="Plus-btn "
-                  >
-                    <i className={"fas fa-plus"} />
-                  </Button>
-                ) : null}
+              {/* ) : null} */}
+              {PickupTrackingListData.filter((x) => x.Status === "Active")
+                .length ===
+              idx + 1 ? (
+                <Button
+                  justIcon
+                  color="facebook"
+                  onClick={() => this.addnewRowPickupTrackingNumber()}
+                  className="Plus-btn "
+                >
+                  <i className={"fas fa-plus"} />
+                </Button>
+              ) : null}
 
-                <Tooltip title={trackingnumber.CreatedByName} arrow>
-                  <Button justIcon color="twitter" className="Plus-btn info-icon">
-                    <InfoIcon />
-                  </Button>
-                </Tooltip>
-              </td>
-            </tr>
-          );
-        });
-
+              <Tooltip title={trackingnumber.CreatedByName} arrow>
+                <Button justIcon color="twitter" className="Plus-btn info-icon">
+                  <InfoIcon />
+                </Button>
+              </Tooltip>
+            </td>
+          </tr>
+        );
+      });
     }
-
-
   };
   AddNewRowData = () => {
     let attachments = this.state.Attachments.filter(
@@ -7415,11 +7791,10 @@ class ShipmentCustom extends React.Component {
     }
   };
 
-  deleteFedexlabelPickup = (trckingID,cancelPickupID) => {
-    console.log("track = ", trckingID);
+  deleteFedexlabelPickup = (trckingID, cancelPickupID) => {
     var data = {
       TrackingNumber: trckingID,
-      cancelPickupID:cancelPickupID
+      cancelPickupID: cancelPickupID,
       // Userid: CommonConfig.loggedInUserData().PersonID,
     };
     this.showLoader();
@@ -7439,11 +7814,9 @@ class ShipmentCustom extends React.Component {
           this.getPickupConfDetail();
           this.getDocumentation();
           this.getnotesByID();
-          console.log("res.data: ", res.data);
         } else {
           this.hideLoader();
           cogoToast.error("Fedex Label is not Deleted");
-          console.log("res.data: ", res.data);
         }
       })
       .catch((err) => {
@@ -7474,11 +7847,9 @@ class ShipmentCustom extends React.Component {
           this.getPickupConfDetail();
           this.getDocumentation();
           this.getnotesByID();
-          console.log("res.data: ", res.data);
         } else {
           this.hideLoader();
           cogoToast.error("Fedex Label is not Deleted");
-          console.log("res.data: ", res.data);
         }
       })
       .catch((err) => {
@@ -7520,7 +7891,6 @@ class ShipmentCustom extends React.Component {
   };
 
   handleDocumentSendMail = (e, record, type) => {
-    debugger;
     if (type === "PrepaidLables") {
       if (!record.hasOwnProperty("isGenerated")) {
         let Formatdata = {
@@ -7683,17 +8053,16 @@ class ShipmentCustom extends React.Component {
     }
   };
 
-  printDocumentEsign = (record, type) => { };
+  printDocumentEsign = (record, type) => {};
 
   handleapiSendMail = async (type) => {
     this.setState({ sendmailopen: false });
     this.showLoader();
     if (type === "PrepaidLables") {
       try {
-        debugger;
         if (
           this.state.selectedToCountry.value !=
-          this.state.selectedFromCountry.value &&
+            this.state.selectedFromCountry.value &&
           this.state.PackageType === "Package" &&
           this.state.ShipmentType.value != "Ocean"
         ) {
@@ -7715,7 +8084,7 @@ class ShipmentCustom extends React.Component {
                 mailData.Bodymail = this.state.EmailFormat;
                 mailData.ShippingID =
                   this.props.location.state &&
-                    this.props.location.state.ShipppingID
+                  this.props.location.state.ShipppingID
                     ? this.props.location.state.ShipppingID
                     : null;
                 mailData.DocumentType = "Prepaid Label";
@@ -7730,8 +8099,6 @@ class ShipmentCustom extends React.Component {
 
                 this.state.attas.push(attachments);
                 mailData.attachments = this.state.attas;
-                console.log("tes...1", mailData.attachments);
-                //console.log("tes...2", attachments[0].filename);
                 mailData.dateTime = mailData.attachments[0].filename;
                 await api
                   .post("scheduleshipment/sendInvoiceEmail", mailData)
@@ -7865,7 +8232,6 @@ class ShipmentCustom extends React.Component {
   };
 
   handleDocumentDelete = (e, record) => {
-    console.log("records = ", record);
     delete record.TrackingNumber;
     var AttachmentList = this.state.Attachments;
     var Index = AttachmentList.indexOf(record);
@@ -7976,7 +8342,7 @@ class ShipmentCustom extends React.Component {
                   value={DocumentType}
                   disabled={
                     cellInfo.original.TrackingNumber ||
-                      cellInfo.original.hasOwnProperty("isGenerated")
+                    cellInfo.original.hasOwnProperty("isGenerated")
                       ? true
                       : false
                   }
@@ -7999,7 +8365,7 @@ class ShipmentCustom extends React.Component {
                   value={DocumentType}
                   disabled={
                     cellInfo.original.TrackingNumber ||
-                      cellInfo.original.hasOwnProperty("isGenerated")
+                    cellInfo.original.hasOwnProperty("isGenerated")
                       ? true
                       : false
                   }
@@ -8023,7 +8389,7 @@ class ShipmentCustom extends React.Component {
               value={DocumentType}
               disabled={
                 cellInfo.original.TrackingNumber ||
-                  cellInfo.original.hasOwnProperty("isGenerated")
+                cellInfo.original.hasOwnProperty("isGenerated")
                   ? true
                   : false
               }
@@ -8037,8 +8403,8 @@ class ShipmentCustom extends React.Component {
                   {...params}
                   margin="normal"
                   fullWidth
-                // error={this.state.documentTypeErr}
-                // helperText={this.state.documentTypeHelperText}
+                  // error={this.state.documentTypeErr}
+                  // helperText={this.state.documentTypeHelperText}
                 />
               )}
             />
@@ -8053,7 +8419,7 @@ class ShipmentCustom extends React.Component {
               value={DocumentType}
               disabled={
                 cellInfo.original.TrackingNumber ||
-                  cellInfo.original.hasOwnProperty("isGenerated")
+                cellInfo.original.hasOwnProperty("isGenerated")
                   ? true
                   : false
               }
@@ -8081,7 +8447,7 @@ class ShipmentCustom extends React.Component {
               value={DocumentType}
               disabled={
                 cellInfo.original.TrackingNumber ||
-                  cellInfo.original.hasOwnProperty("isGenerated")
+                cellInfo.original.hasOwnProperty("isGenerated")
                   ? true
                   : false
               }
@@ -8095,8 +8461,8 @@ class ShipmentCustom extends React.Component {
                   {...params}
                   margin="normal"
                   fullWidth
-                // error={this.state.documentTypeErr}
-                // helperText={this.state.documentTypeHelperText}
+                  // error={this.state.documentTypeErr}
+                  // helperText={this.state.documentTypeHelperText}
                 />
               )}
             />
@@ -8110,7 +8476,7 @@ class ShipmentCustom extends React.Component {
                 value={DocumentType}
                 disabled={
                   cellInfo.original.TrackingNumber ||
-                    cellInfo.original.hasOwnProperty("isGenerated")
+                  cellInfo.original.hasOwnProperty("isGenerated")
                     ? true
                     : false
                 }
@@ -8188,9 +8554,11 @@ class ShipmentCustom extends React.Component {
 
     if (
       (!CommonConfig.isEmpty(this.state.PickupDate) &&
-        this.state.PickupVendorName.value === null) ||
+        (this.state.PickupVendorName.value === null ||
+          this.state.PickupVendorName.value === "")) ||
       (!CommonConfig.isEmpty(this.state.PickupDate) &&
-        this.state.PickupVendorName.value === "NULL")
+        (this.state.PickupVendorName.value === "NULL" ||
+          this.state.PickupVendorName.value === ""))
     ) {
       IsValid = false;
       this.setState({
@@ -8198,17 +8566,13 @@ class ShipmentCustom extends React.Component {
         pickupProviderHelperText: "Please select Pickup Provider",
       });
     }
-    debugger;
-    console.log(
-      "this.state.PickupVendorName.value = ",
-      this.state.PickupVendorName.value
-    );
+
     if (
       (this.state.PickupVendorName.value == "NULL" ||
-        this.state.PickupVendorName.value == null) &&
+        this.state.PickupVendorName.value == null ||
+        this.state.PickupVendorName.value == "") &&
       CommonConfig.isEmpty(this.state.PickupDate)
     ) {
-      console.log("Welcome");
       IsValid = true;
       this.setState({
         pickupDateErr: false,
@@ -8216,18 +8580,40 @@ class ShipmentCustom extends React.Component {
       });
     } else {
       if (
-        (this.state.PickupVendorName.value != null &&
+        ((this.state.PickupVendorName.value != null ||
+          this.state.PickupVendorName.value != "") &&
           CommonConfig.isEmpty(this.state.PickupDate)) ||
-        (this.state.PickupVendorName.value != "NULL" &&
+        ((this.state.PickupVendorName.value != "NULL" ||
+          this.state.PickupVendorName.value != "") &&
           CommonConfig.isEmpty(this.state.PickupDate))
       ) {
-        console.log("Set Value in");
         IsValid = false;
         this.setState({
           pickupDateErr: true,
           pickupDateHelperText: "Please select Pickup Date",
         });
       }
+
+      // if (
+      //   this.state.PickupVendorName.value === 68 &&
+      //   CommonConfig.isEmpty(this.state.ReadyTime)
+      // ) {
+      //   IsValid = false;
+      //   this.setState({
+      //     ReadyTimeErr: true,
+      //     ReadyTimeErrHelperText: "Please select Ready Time",
+      //   });
+      // }
+      // if (
+      //   this.state.PickupVendorName.value === 68 &&
+      //   CommonConfig.isEmpty(this.state.AvailableTime)
+      // ) {
+      //   IsValid = false;
+      //   this.setState({
+      //     AvailableTimeErr: true,
+      //     AvailableTimeErrHelperText: "Please select Available Time",
+      //   });
+      // }
     }
 
     return IsValid;
@@ -8270,38 +8656,30 @@ class ShipmentCustom extends React.Component {
     this.setState({ deleteopen: true });
   };
 
-  handlePickupSchedule = (value,value2,value3) => {
-    debugger
-    console.log("Value2 = ",value2);
-    if(value2 === undefined){
-      
-      this.setState({ FedexTrackAddorUpdate: 'Add' });
+  handlePickupSchedule = (value, value2, value3) => {
+    if (value2 === undefined) {
+      this.setState({ FedexTrackAddorUpdate: "Add" });
       this.setState({ PickupID: value3 });
-    }else{
-      this.setState({ FedexTrackAddorUpdate: 'Update' });
+    } else {
+      this.setState({ FedexTrackAddorUpdate: "Update" });
       this.setState({ PickupID: value3 });
-    
     }
-      
-    
+
     this.setState({ FedexTrackNumber: value });
     this.setState({ IsfedexLabelGeneratePickup: true });
-  }
+  };
 
   handleClickCancelClosePickup = () => {
     this.setState({ IsfedexLabelGeneratePickup: false });
-  }
+  };
 
-  GenratePickupConfirmation = (inputdata,addUpdate,PickupID) => {
-    console.log("....111...", this.state.SubServiceName.value);
-
-    debugger;
+  GenratePickupConfirmation = (inputdata, addUpdate, PickupID) => {
     this.showLoader();
     var data = {
       FedexTrackingNumber: inputdata,
       FedexSerType: this.state.SubServiceName.value,
       queryType: addUpdate,
-      PickupID: PickupID
+      PickupID: PickupID,
     };
     api.post("scheduleshipment/generatePickup", data).then((res) => {
       this.setState({ IsfedexLabelGeneratePickup: false });
@@ -8327,7 +8705,6 @@ class ShipmentCustom extends React.Component {
             : null,
         Attachment: this.state.Attachments,
       };
-      console.log(" this.state.Attachments = ", this.state.Attachments);
       this.setState({ deleteopen: false });
       api
         .post("scheduleshipment/deleteShipmentByID", data)
@@ -8340,23 +8717,23 @@ class ShipmentCustom extends React.Component {
               state: {
                 filterlist:
                   this.props.history.location.state &&
-                    this.props.history.location.state.filterlist !== undefined
+                  this.props.history.location.state.filterlist !== undefined
                     ? this.props.history.location.state.filterlist
                     : null,
                 shipmentstatusList:
                   this.props.history.location.state &&
-                    this.props.history.location.state.shipmentstatusList !==
+                  this.props.history.location.state.shipmentstatusList !==
                     undefined
                     ? this.props.history.location.state.shipmentstatusList
                     : [],
                 sortlist:
                   this.props.history.location.state &&
-                    this.props.history.location.state.sortlist !== undefined
+                  this.props.history.location.state.sortlist !== undefined
                     ? this.props.history.location.state.sortlist
                     : null,
                 type:
                   this.props.history.location.state &&
-                    this.props.history.location.state.type !== undefined
+                  this.props.history.location.state.type !== undefined
                     ? this.props.history.location.state.type
                     : "Shipment",
               },
@@ -8380,6 +8757,7 @@ class ShipmentCustom extends React.Component {
     this.setState({ MailOpenPopup: false });
     if (this.state.redirect) {
       if (this.state.isLock === false) {
+        console.log("3.......");
         this.releaseLock();
       }
       this.props.history.push({
@@ -8387,22 +8765,22 @@ class ShipmentCustom extends React.Component {
         state: {
           filterlist:
             this.props.history.location.state &&
-              this.props.history.location.state.filterlist !== undefined
+            this.props.history.location.state.filterlist !== undefined
               ? this.props.history.location.state.filterlist
               : null,
           shipmentstatusList:
             this.props.history.location.state &&
-              this.props.history.location.state.shipmentstatusList !== undefined
+            this.props.history.location.state.shipmentstatusList !== undefined
               ? this.props.history.location.state.shipmentstatusList
               : [],
           sortlist:
             this.props.history.location.state &&
-              this.props.history.location.state.sortlist !== undefined
+            this.props.history.location.state.sortlist !== undefined
               ? this.props.history.location.state.sortlist
               : null,
           type:
             this.props.history.location.state &&
-              this.props.history.location.state.type !== undefined
+            this.props.history.location.state.type !== undefined
               ? this.props.history.location.state.type
               : "Shipment",
         },
@@ -8432,6 +8810,7 @@ class ShipmentCustom extends React.Component {
             //  this.setState({redirect: true})
             if (this.state.redirect) {
               if (this.state.isLock === false) {
+                console.log("4.......");
                 this.releaseLock();
               }
               this.props.history.push({
@@ -8439,23 +8818,23 @@ class ShipmentCustom extends React.Component {
                 state: {
                   filterlist:
                     this.props.history.location.state &&
-                      this.props.history.location.state.filterlist !== undefined
+                    this.props.history.location.state.filterlist !== undefined
                       ? this.props.history.location.state.filterlist
                       : null,
                   shipmentstatusList:
                     this.props.history.location.state &&
-                      this.props.history.location.state.shipmentstatusList !==
+                    this.props.history.location.state.shipmentstatusList !==
                       undefined
                       ? this.props.history.location.state.shipmentstatusList
                       : [],
                   sortlist:
                     this.props.history.location.state &&
-                      this.props.history.location.state.sortlist !== undefined
+                    this.props.history.location.state.sortlist !== undefined
                       ? this.props.history.location.state.sortlist
                       : null,
                   type:
                     this.props.history.location.state &&
-                      this.props.history.location.state.type !== undefined
+                    this.props.history.location.state.type !== undefined
                       ? this.props.history.location.state.type
                       : "Shipment",
                 },
@@ -8478,7 +8857,6 @@ class ShipmentCustom extends React.Component {
   };
 
   handleSave = (redirect) => {
-    debugger;
     if (
       this.state.Moveupdatetozip === true &&
       this.state.Moveupdatefromzip === true
@@ -8704,10 +9082,17 @@ class ShipmentCustom extends React.Component {
             ShipmentStatus: this.state.ShipmentStatus,
             pickup_date:
               CommonConfig.isEmpty(this.state.PickupDate) != true
-                ? moment(this.state.PickupDate)
-                  .format("YYYY-MM-DD HH:mm:ss")
-                  .toString()
+                ? // ? momentTimezone(this.state.PickupDate)
+                  //     .tz(CommonConfig.UStimezone)
+                  //     .format("YYYY-MM-DD HH:mm:ss")
+                  //     .toString()
+                  moment(this.state.PickupDate)
+                    .format("YYYY-MM-DD HH:mm:ss")
+                    .toString()
                 : null,
+            ReadyTime: this.state.ReadyTime,
+            AvailableTime: this.state.AvailableTime,
+            SpecialInstucation: this.state.NotesforPickup,
             pickupProvider: !CommonConfig.isEmpty(
               this.state.PickupVendorName.value
             )
@@ -8743,8 +9128,8 @@ class ShipmentCustom extends React.Component {
             InvoiceDueDate:
               CommonConfig.isEmpty(this.state.InvoiceDueDate) != true
                 ? moment(this.state.InvoiceDueDate)
-                  .format("YYYY-MM-DD HH:mm:ss")
-                  .toString()
+                    .format("YYYY-MM-DD HH:mm:ss")
+                    .toString()
                 : null,
             managed_by: this.state.ManagedBy.value,
             ServiceName: this.state.ServiceName
@@ -8792,17 +9177,14 @@ class ShipmentCustom extends React.Component {
             //state_name: this.state.FromAddressObj.AddressDetail.State,
             state_name: this.state.fromState.value
               ? this.state.fromState.value
-              : this.state.fromState.label == '' ? "" : this.state.fromState,
+              : this.state.fromState.label == ""
+              ? ""
+              : this.state.fromState,
             zip_code: this.state.FromZipCode,
             phone1: this.state.FromPhone1,
             phone2: this.state.FromPhone2,
             email: this.state.FromEmail,
           };
-
-          console.log("this.state.fromState ", this.state.fromState.value
-            ? this.state.fromState.value
-            : this.state.fromState)
-          console.log("this.state.fromState.value = ", this.state.fromState.value);
           var to_address = {
             AddressID: recipientobj.ToAddressID,
             country_id: this.state.selectedToCountry.value,
@@ -8821,7 +9203,9 @@ class ShipmentCustom extends React.Component {
             // state_name: this.state.ToAddressObj.AddressDetail.State,
             state_name: this.state.toState.value
               ? this.state.toState.value
-              : this.state.toState.value == '' ? "" : this.state.toState,
+              : this.state.toState.value == ""
+              ? ""
+              : this.state.toState,
             zip_code: this.state.ToZipCode,
             phone1: this.state.ToPhone1,
             phone2: this.state.ToPhone2,
@@ -8851,7 +9235,7 @@ class ShipmentCustom extends React.Component {
 
             paymentdata.push(paymentData);
           }
-
+          console.log("pppppp", this.state.paymentIssued);
           for (var j = 0; j < creditCardObj.length; j++) {
             let paymentData = {};
             paymentData = {
@@ -8889,6 +9273,7 @@ class ShipmentCustom extends React.Component {
               }
             }
           }
+
           var objdata = {};
           if (this.state.IsChanged) {
             objdata = {
@@ -8914,10 +9299,12 @@ class ShipmentCustom extends React.Component {
                 this.state.AllClear.value === "Not Ready"
                   ? null
                   : this.state.AllClear.value === "Ready for Yes"
-                    ? 3
-                    : this.state.AllClear.value === "No"
-                      ? 0
-                      : 1,
+                  ? 3
+                  : this.state.AllClear.value === "Collections" // ? "Ready for Yes"
+                  ? 4
+                  : this.state.AllClear.value === "No"
+                  ? 0
+                  : 1,
               Amount: this.state.TotalCostReceived,
             };
             if (
@@ -8960,26 +9347,27 @@ class ShipmentCustom extends React.Component {
               StayInIndia: this.state.StayInIndia,
               LatestArrivalDate: this.state.LatestArrivalDate
                 ? moment(this.state.LatestArrivalDate)
-                  .format(CommonConfig.dateFormat.dbDateTime)
-                  .toString()
+                    .format(CommonConfig.dateFormat.dbDateTime)
+                    .toString()
                 : null,
               AppliedForTR: this.state.AppliedForTR,
               AbleToProvidePassport: this.state.AbleToProvidePassport,
               VisaValidDate: this.state.VisaValidDate
                 ? moment(this.state.VisaValidDate)
-                  .format(CommonConfig.dateFormat.dbDateTime)
-                  .toString()
+                    .format(CommonConfig.dateFormat.dbDateTime)
+                    .toString()
                 : null,
               VisaCategory: this.state.VisaCategory,
               CustomClearanceDate:
                 CommonConfig.isEmpty(this.state.CustomClearanceDate) != true
                   ? moment(this.state.CustomClearanceDate)
-                    .format("YYYY-MM-DD")
-                    .toString()
+                      .format("YYYY-MM-DD HH:mm:ss")
+                      .toString()
                   : null,
             };
           }
 
+          console.log("pppppp111", objdata.manualTrackingData);
           var formData = new FormData();
           formData.append("data", JSON.stringify(objdata));
 
@@ -9003,7 +9391,6 @@ class ShipmentCustom extends React.Component {
                     } else {
                       this.setState({ MailOpenPopup: false });
                     }
-                    debugger;
                     if (objdata.shipments.ShippingID < 13071) {
                       if (objdata.shipments.shipment_type == "Ocean") {
                         var data = {
@@ -9013,17 +9400,15 @@ class ShipmentCustom extends React.Component {
                           pickupDate:
                             CommonConfig.isEmpty(this.state.PickupDate) != true
                               ? moment(this.state.PickupDate)
-                                .format("YYYY-MM-DD")
-                                .toString()
+                                  .format("YYYY-MM-DD")
+                                  .toString()
                               : null,
                           containerID: objdata.shipments.ContainerID,
                         };
 
                         api
                           .post("scheduleshipment/tempautoOceanTracking", data)
-                          .then((res) => {
-                            console.log(res);
-                          });
+                          .then((res) => {});
                       }
                     } else {
                       if (objdata.shipments.shipment_type == "Ocean") {
@@ -9034,16 +9419,14 @@ class ShipmentCustom extends React.Component {
                           pickupDate:
                             CommonConfig.isEmpty(this.state.PickupDate) != true
                               ? moment(this.state.PickupDate)
-                                .format("YYYY-MM-DD")
-                                .toString()
+                                  .format("YYYY-MM-DD")
+                                  .toString()
                               : null,
                         };
 
                         api
                           .post("scheduleshipment/autoOceanTracking", data)
-                          .then((res) => {
-                            // console.log(res);
-                          });
+                          .then((res) => {});
                       }
                     }
 
@@ -9051,6 +9434,7 @@ class ShipmentCustom extends React.Component {
                       this.setState({ redirect: true });
                       if (this.state.MailDelivered == false) {
                         if (this.state.isLock === false) {
+                          console.log("1.......");
                           this.releaseLock();
                         }
                         this.props.history.push({
@@ -9058,26 +9442,26 @@ class ShipmentCustom extends React.Component {
                           state: {
                             filterlist:
                               this.props.history.location.state &&
-                                this.props.history.location.state.filterlist !==
+                              this.props.history.location.state.filterlist !==
                                 undefined
                                 ? this.props.history.location.state.filterlist
                                 : null,
                             shipmentstatusList:
                               this.props.history.location.state &&
-                                this.props.history.location.state
-                                  .shipmentstatusList !== undefined
+                              this.props.history.location.state
+                                .shipmentstatusList !== undefined
                                 ? this.props.history.location.state
-                                  .shipmentstatusList
+                                    .shipmentstatusList
                                 : [],
                             sortlist:
                               this.props.history.location.state &&
-                                this.props.history.location.state.sortlist !==
+                              this.props.history.location.state.sortlist !==
                                 undefined
                                 ? this.props.history.location.state.sortlist
                                 : null,
                             type:
                               this.props.history.location.state &&
-                                this.props.history.location.state.type !==
+                              this.props.history.location.state.type !==
                                 undefined
                                 ? this.props.history.location.state.type
                                 : "Shipment",
@@ -9092,7 +9476,7 @@ class ShipmentCustom extends React.Component {
                           ),
                           AttachmentList: [],
                         },
-                        function () {
+                        function() {
                           this.reCallApi();
                         }
                       );
@@ -9101,7 +9485,6 @@ class ShipmentCustom extends React.Component {
                     const options = {
                       hideAfter: 5,
                     };
-                    // console.log("response .........", res);
 
                     this.setState({ isLock: true, lockMsg: res.data.message });
                     cogoToast.error(res.data.message, options);
@@ -9160,9 +9543,23 @@ class ShipmentCustom extends React.Component {
   };
 
   additionalDateChange = (date, type) => {
+    console.log(
+      "pick...",
+      moment(date).format(CommonConfig.dateFormat.dateOnly)
+    );
+    console.log(
+      "pick...",
+      momentTimezone(date)
+        .tz(CommonConfig.UStimezone)
+        .format(CommonConfig.dateFormat.dateOnly)
+    );
+
     if (type === "PickupDate") {
       this.setState({
-        PickupDate: date,
+        PickupDate: date
+          ? moment(date).format(CommonConfig.dateFormat.dateOnly)
+          : date,
+        // PickupDate: date,
         IsPickup: !CommonConfig.isEmpty(date) ? true : false,
       });
     }
@@ -9408,6 +9805,7 @@ class ShipmentCustom extends React.Component {
 
   handleCancel = () => {
     if (this.state.isLock === false) {
+      console.log("2.......");
       this.releaseLock();
     }
 
@@ -9416,22 +9814,22 @@ class ShipmentCustom extends React.Component {
       state: {
         filterlist:
           this.props.history.location.state &&
-            this.props.history.location.state.filterlist !== undefined
+          this.props.history.location.state.filterlist !== undefined
             ? this.props.history.location.state.filterlist
             : null,
         shipmentstatusList:
           this.props.history.location.state &&
-            this.props.history.location.state.shipmentstatusList !== undefined
+          this.props.history.location.state.shipmentstatusList !== undefined
             ? this.props.history.location.state.shipmentstatusList
             : [],
         sortlist:
           this.props.history.location.state &&
-            this.props.history.location.state.sortlist !== undefined
+          this.props.history.location.state.sortlist !== undefined
             ? this.props.history.location.state.sortlist
             : null,
         type:
           this.props.history.location.state &&
-            this.props.history.location.state.type !== undefined
+          this.props.history.location.state.type !== undefined
             ? this.props.history.location.state.type
             : "Shipment",
       },
@@ -9480,8 +9878,6 @@ class ShipmentCustom extends React.Component {
   };
   isGeneratedPriperdlableBox = async (type) => {
     if (type === "Prepaid Labels") {
-      console.log("PickupVendorName = ", this.state.PickupVendorName.label);
-
       if (this.state.TotalPackages == 0) {
         cogoToast.error("Please enter the No. of packages");
         this.hideLoader();
@@ -9497,119 +9893,182 @@ class ShipmentCustom extends React.Component {
         cogoToast.error("Please enter packages details");
         this.hideLoader();
       } else {
-        if (this.state.PickupVendorName.label == null) {
-          console.log("IN IF");
-          if (
-            this.state.selectedFromCountry.value !=
-            this.state.selectedToCountry.value
-          ) {
-            await this.uploadETD();
-            var etdGetData = {
-              trackingNumber: this.state.TrackingNumber,
-            };
-            this.showLoader();
-            api.post("fedexETDApi/getEtdDetails", etdGetData).then((res) => {
-              this.hideLoader();
-              this.setState({ EtdDocumentId: res.data[0].DocumentId });
-            });
-          }
-
+        if (
+          (this.state.ServiceName.value === "SFL" &&
+            this.state.ShipmentType.value === "Air" &&
+            this.state.SubServiceName.value === "SFL Saver") ||
+          (this.state.ServiceName.value === "SFL Worldwide" &&
+            this.state.ShipmentType.value === "Ocean" &&
+            (this.state.SubServiceName.value === "Texas Console" ||
+              this.state.SubServiceName.value === "New Jersey Console" ||
+              this.state.SubServiceName.value === "California Console"))
+        ) {
           this.setState({
             ShowGeneratedPriperdlable: !this.state.ShowGeneratedPriperdlable,
           });
         } else {
-          console.log("In Else");
+          if (
+            this.state.PickupVendorName.label == null ||
+            this.state.PickupVendorName.label == ""
+          ) {
+            console.log("IN IF");
+            if (
+              this.state.selectedFromCountry.value !=
+              this.state.selectedToCountry.value
+            ) {
+              await this.uploadETD();
+              var etdGetData = {
+                trackingNumber: this.state.TrackingNumber,
+              };
+              this.showLoader();
+              api.post("fedexETDApi/getEtdDetails", etdGetData).then((res) => {
+                this.hideLoader();
+                this.setState({ EtdDocumentId: res.data[0].DocumentId });
+              });
+            }
 
-          if (this.state.PickupDate != null) {
-            var PickupDate = new Date(this.state.PickupDate);
-            console.log("PickupDate = ", PickupDate.getDay());
-            PickupDate.setHours(0, 0, 0, 0);
-
-            var CurrDate = new Date();
-            var addDay = 0;
-            var newDate = "";
-
-            console.log("CurrDate.getDay() = ", CurrDate.getDay());
-
+            var checkData = 0;
             if (
               this.state.ShipmentType.value != "Ground" &&
               this.state.ShipmentType.value != "Ocean"
             ) {
-              if (CurrDate.getDay() == 0) {
-                addDay = 2;
-              } else if (CurrDate.getDay() == 6) {
-                addDay = 3;
-              } else if (CurrDate.getDay() == 5) {
-                addDay = 3;
-              } else {
-                addDay = 1;
-              }
-            } else {
-              if (CurrDate.getDay() == 0) {
-                addDay = 13;
-              } else if (CurrDate.getDay() == 6) {
-                addDay = 14;
-              } else {
-                addDay = 15;
-              }
-            }
-
-            if (addDay != 0) {
-              console.log(addDay);
-              CurrDate = CurrDate.setDate(CurrDate.getDate() + addDay);
-              console.log(CurrDate);
-              console.log(PickupDate);
-
-              newDate = new Date(CurrDate);
-              newDate.setHours(0, 0, 0, 0);
-
-              newDate = moment(newDate);
-              PickupDate = moment(PickupDate);
-              console.log("newDate = ", newDate);
-              console.log("PickupDate = ", PickupDate);
-              console.log(PickupDate.diff(newDate, "seconds"));
-            }
-
-            // var pickupNewDateCurr = new Date();
-            debugger;
-            if (PickupDate <= newDate) {
               if (
                 this.state.selectedFromCountry.value !=
                 this.state.selectedToCountry.value
               ) {
-                await this.uploadETD();
-                var etdGetData = {
-                  trackingNumber: this.state.TrackingNumber,
-                };
-                this.showLoader();
-                api
-                  .post("fedexETDApi/getEtdDetails", etdGetData)
-                  .then((res) => {
-                    this.hideLoader();
-                    this.setState({ EtdDocumentId: res.data[0].DocumentId });
-                  });
+                if (
+                  this.state.totalInsuredValue <= this.state.TotalCostCommercial
+                ) {
+                  checkData = 0;
+                } else {
+                  checkData = 1;
+                }
               }
+            }
 
+            if (checkData == 0) {
               this.setState({
                 ShowGeneratedPriperdlable: !this.state
                   .ShowGeneratedPriperdlable,
               });
             } else {
+              cogoToast.error(
+                "Total Insured value should be less than total commercial value"
+              );
+            }
+          } else {
+            console.log("In Else");
+
+            if (this.state.PickupDate != null) {
+              var PickupDate = new Date(this.state.PickupDate);
+              PickupDate.setHours(0, 0, 0, 0);
+
+              var CurrDate = new Date();
+              var addDay = 0;
+              var newDate = "";
+
               if (
                 this.state.ShipmentType.value != "Ground" &&
                 this.state.ShipmentType.value != "Ocean"
               ) {
-                cogoToast.error(
-                  "Pickup Date is too far for Pickup Schedule Please select next working day."
-                );
+                if (CurrDate.getDay() == 0) {
+                  addDay = 2;
+                } else if (CurrDate.getDay() == 6) {
+                  addDay = 3;
+                } else if (CurrDate.getDay() == 5) {
+                  addDay = 3;
+                } else {
+                  addDay = 1;
+                }
               } else {
-                cogoToast.error(
-                  "Pickup Date is too far for Pickup Schedule Please select Within 10 days."
-                );
+                if (CurrDate.getDay() == 0) {
+                  addDay = 13;
+                } else if (CurrDate.getDay() == 6) {
+                  addDay = 14;
+                } else {
+                  addDay = 15;
+                }
               }
+
+              if (addDay != 0) {
+                CurrDate = CurrDate.setDate(CurrDate.getDate() + addDay);
+
+                newDate = new Date(CurrDate);
+                newDate.setHours(0, 0, 0, 0);
+
+                newDate = moment(newDate);
+                PickupDate = moment(PickupDate);
+              }
+
+              // var pickupNewDateCurr = new Date();
+              var checkData = 0;
+              if (
+                this.state.ShipmentType.value != "Ground" &&
+                this.state.ShipmentType.value != "Ocean"
+              ) {
+                if (
+                  this.state.selectedFromCountry.value !=
+                  this.state.selectedToCountry.value
+                ) {
+                  if (
+                    this.state.totalInsuredValue <=
+                    this.state.TotalCostCommercial
+                  ) {
+                    checkData = 0;
+                  } else {
+                    checkData = 1;
+                  }
+                }
+              }
+              if (PickupDate <= newDate) {
+                if (
+                  this.state.selectedFromCountry.value !=
+                  this.state.selectedToCountry.value
+                ) {
+                  console.log("Get Gata = Hello22");
+                  console.log("TOTAL COM = ", this.state.TotalCostCommercial);
+                  console.log("TOTAL COM = ", this.state.totalInsuredValue);
+
+                  await this.uploadETD();
+                  var etdGetData = {
+                    trackingNumber: this.state.TrackingNumber,
+                  };
+                  this.showLoader();
+                  api
+                    .post("fedexETDApi/getEtdDetails", etdGetData)
+                    .then((res) => {
+                      this.hideLoader();
+                      this.setState({ EtdDocumentId: res.data[0].DocumentId });
+                    });
+                }
+                console.log("checkData = ", checkData);
+                if (checkData == 0) {
+                  this.setState({
+                    ShowGeneratedPriperdlable: !this.state
+                      .ShowGeneratedPriperdlable,
+                  });
+                } else {
+                  cogoToast.error(
+                    "Total Insured value should be less than total commercial value"
+                  );
+                }
+              } else {
+                if (
+                  this.state.ShipmentType.value != "Ground" &&
+                  this.state.ShipmentType.value != "Ocean"
+                ) {
+                  cogoToast.error(
+                    "Pickup Date is too far for Pickup Schedule Please select next working day."
+                  );
+                } else {
+                  cogoToast.error(
+                    "Pickup Date is too far for Pickup Schedule Please select Within 10 days."
+                  );
+                }
+              }
+            } else {
+              cogoToast.error("Please select Pickup date");
             }
-          } else {
-            cogoToast.error("Please select Pickup date");
           }
         }
       }
@@ -9619,8 +10078,6 @@ class ShipmentCustom extends React.Component {
   isGeneratedPriperdlable = () => {
     this.setState({ ShowGeneratedPriperdlable: false });
     this.showLoader();
-    console.log("Hello = ", this.state.PickupVendorName);
-
     try {
       var labelSize = localStorage.getItem("selectedPaperSize");
       var data = {
@@ -9630,12 +10087,17 @@ class ShipmentCustom extends React.Component {
         LabelSpecification: labelSize,
         EtdDocumentId: this.state.EtdDocumentId,
       };
+      console.log(";;;;;;;;;", this.state.PackageList);
+
       if (
-        this.state.ServiceName.value === "SFL Worldwide" &&
-        this.state.ShipmentType.value === "Ocean" &&
-        (this.state.SubServiceName.value === "Texas Console" ||
-          this.state.SubServiceName.value === "New Jersey Console" ||
-          this.state.SubServiceName.value === "California Console")
+        (this.state.ServiceName.value === "SFL" &&
+          this.state.ShipmentType.value === "Air" &&
+          this.state.SubServiceName.value === "SFL Saver") ||
+        (this.state.ServiceName.value === "SFL Worldwide" &&
+          this.state.ShipmentType.value === "Ocean" &&
+          (this.state.SubServiceName.value === "Texas Console" ||
+            this.state.SubServiceName.value === "New Jersey Console" ||
+            this.state.SubServiceName.value === "California Console"))
       ) {
         if (this.state.TotalPackages == 0) {
           cogoToast.error("Please enter the No. of packages");
@@ -9644,11 +10106,25 @@ class ShipmentCustom extends React.Component {
           cogoToast.error("Please enter packages details");
           this.hideLoader();
         } else if (
-          this.state.PackageList[0].PackageContent == "" ||
+          (this.state.ServiceName.value !== "SFL" &&
+            this.state.ShipmentType.value !== "Air" &&
+            this.state.SubServiceName.value !== "SFL Saver" &&
+            this.state.PackageList[0].PackageContent == "") ||
           this.state.PackageList[0].Length == 0 ||
           this.state.PackageList[0].Height == 0 ||
           this.state.PackageList[0].Width == 0 ||
           this.state.PackageList[0].EstimetedWeight == 0
+        ) {
+          cogoToast.error("Please enter packages details");
+          this.hideLoader();
+        } else if (
+          this.state.PackageList[0].Length == 0 ||
+          this.state.PackageList[0].Height == 0 ||
+          this.state.PackageList[0].Width == 0 ||
+          (this.state.PackageList[0].EstimetedWeight == 0 &&
+            this.state.ServiceName.value === "SFL" &&
+            this.state.ShipmentType.value === "Air" &&
+            this.state.SubServiceName.value === "SFL Saver")
         ) {
           cogoToast.error("Please enter packages details");
           this.hideLoader();
@@ -9761,7 +10237,7 @@ class ShipmentCustom extends React.Component {
       state: {
         filterlist:
           this.props.history.location.state &&
-            this.props.history.location.state.filterlist !== undefined
+          this.props.history.location.state.filterlist !== undefined
             ? this.props.history.location.state.filterlist
             : null,
         shipmentstatusList: this.state,
@@ -9779,7 +10255,7 @@ class ShipmentCustom extends React.Component {
         Invoicedata: this.state.paymentList,
         sortlist:
           this.props.history.location.state &&
-            this.props.history.location.state.sortlist !== undefined
+          this.props.history.location.state.sortlist !== undefined
             ? this.props.history.location.state.sortlist
             : null,
       },
@@ -9969,6 +10445,13 @@ class ShipmentCustom extends React.Component {
     const containerName = this.state.ContainerNameList.map((container) => {
       return { value: container.ContainerID, label: container.ContainerName };
     });
+    const readytimelists = this.state.ReadyTimeList.map((container) => {
+      return { value: container.label, label: container.view };
+    });
+    const avalibletimelists = this.state.AvailableTimeList.map((container) => {
+      return { value: container.label, label: container.view };
+    });
+
     const pickupVendorName = this.state.PickupVendorList.map((pickup) => {
       return { value: pickup.VendorId, label: pickup.Name };
     });
@@ -10112,7 +10595,7 @@ class ShipmentCustom extends React.Component {
                 <Button
                   disabled={
                     record.original.DocumentType === "Contract" &&
-                      this.state.ShipmentType.value === "Ocean"
+                    this.state.ShipmentType.value === "Ocean"
                       ? false
                       : true
                   }
@@ -10123,14 +10606,18 @@ class ShipmentCustom extends React.Component {
                 >
                   Generate
                 </Button>
-              ) : record.original.hasOwnProperty("isGenerated") &&
-                (this.state.ServiceName.value === "FedEx" ||
-                  ((this.state.ServiceName.value === "SFL Worldwide" &&
-                    this.state.ShipmentType.value === "Ocean" &&
-                    this.state.SubServiceName.value === "Texas Console") ||
-                    this.state.SubServiceName.value === "New Jersey Console" ||
-                    this.state.SubServiceName.value ===
-                    "California Console")) ? (
+              ) : (record.original.hasOwnProperty("isGenerated") &&
+                  (this.state.ServiceName.value === "FedEx" ||
+                    ((this.state.ServiceName.value === "SFL Worldwide" &&
+                      this.state.ShipmentType.value === "Ocean" &&
+                      this.state.SubServiceName.value === "Texas Console") ||
+                      this.state.SubServiceName.value ===
+                        "New Jersey Console" ||
+                      this.state.SubServiceName.value ===
+                        "California Console"))) ||
+                (this.state.ServiceName.value === "SFL" &&
+                  this.state.ShipmentType.value === "Air" &&
+                  this.state.SubServiceName.value === "SFL Saver") ? (
                 <Button
                   className="normal-btn sm-orange"
                   // disabled={this.state.isFromCountryCanada ? true : false}
@@ -10198,15 +10685,19 @@ class ShipmentCustom extends React.Component {
         Cell: (record) => {
           return (
             <div className="align-right">
-              {record.original.DocumentType === "Prepaid Labels" &&
-                (this.state.ServiceName.value === "FedEx" ||
-                  (this.state.ServiceName.value === "SFL Worldwide" &&
-                    this.state.ShipmentType.value === "Ocean" &&
-                    (this.state.SubServiceName.value === "Texas Console" ||
-                      this.state.SubServiceName.value === "New Jersey Console" ||
-                      this.state.SubServiceName.value ===
+              {(record.original.DocumentType === "Prepaid Labels" &&
+                (this.state.ServiceName.value === "SFL" &&
+                  this.state.ShipmentType.value === "Air" &&
+                  this.state.SubServiceName.value === "SFL Saver")) ||
+              ((this.state.ServiceName.value === "FedEx" ||
+                (this.state.ServiceName.value === "SFL Worldwide" &&
+                  this.state.ShipmentType.value === "Ocean" &&
+                  (this.state.SubServiceName.value === "Texas Console" ||
+                    this.state.SubServiceName.value === "New Jersey Console" ||
+                    this.state.SubServiceName.value ===
                       "California Console"))) &&
-                record.original.Status === "Active" ? (
+                record.original.Status === "Active" &&
+                record.original.DocumentType === "Prepaid Labels") ? (
                 <Button
                   justIcon
                   color="danger"
@@ -10223,8 +10714,8 @@ class ShipmentCustom extends React.Component {
                 </Button>
               ) : null}
               {record.original.DocumentType === "Invoice" ||
-                (record.original.DocumentType === "Contract" &&
-                  record.original.TrackingNumber) ? (
+              (record.original.DocumentType === "Contract" &&
+                record.original.TrackingNumber) ? (
                 <>
                   <Button
                     justIcon
@@ -10255,8 +10746,8 @@ class ShipmentCustom extends React.Component {
                 </>
               ) : null}
               {(record.index !== 0 || record.original.AttachmentPath) &&
-                (!record.original.TrackingNumber ||
-                  record.original.TrackingNumber === "3") ? (
+              (!record.original.TrackingNumber ||
+                record.original.TrackingNumber === "3") ? (
                 <Button
                   justIcon
                   color="danger"
@@ -10268,7 +10759,7 @@ class ShipmentCustom extends React.Component {
               ) : null}
               {this.state.Attachments.filter((x) => x.Status != "Delete")
                 .length ===
-                record.index + 1 ? (
+              record.index + 1 ? (
                 <div className="align-right">
                   <Button
                     justIcon
@@ -10300,9 +10791,9 @@ class ShipmentCustom extends React.Component {
         },
         id: "EmailDate",
         accessor: (data) => {
-          return moment(data.CreatedOn).format(
-            CommonConfig.dateFormat.dateOnly
-          );
+          return momentTimezone(data.CreatedOn)
+            .tz(CommonConfig.UStimezone)
+            .format(CommonConfig.dateFormat.dateOnly);
         },
         filterable: false,
         sortable: false,
@@ -10564,13 +11055,14 @@ class ShipmentCustom extends React.Component {
                   </GridItem>
                   <GridItem xs={12} sm={4} md={3}>
                     {/* // <GridItem xs={12} sm={3} md={3}> */}
-                    {this.state.AllClear.value === "Yes" &&
-                      (this.state.useraccess.userModuleAccess[15].ModuleID ===
-                        18 &&
-                        this.state.useraccess.userModuleAccess[15].WriteAccess ===
+                    {(this.state.AllClear.value === "Yes" ||
+                      this.state.AllClear.value === "Collections") &&
+                    (this.state.useraccess.userModuleAccess[15].ModuleID ===
+                      18 &&
+                      this.state.useraccess.userModuleAccess[15].WriteAccess ===
                         1 &&
-                        this.state.useraccess.userModuleAccess[15]
-                          .DeleteAccess === 0) ? (
+                      this.state.useraccess.userModuleAccess[15]
+                        .DeleteAccess === 0) ? (
                       <CustomInput
                         labelText="All Clear"
                         id="proposaltype"
@@ -10849,7 +11341,7 @@ class ShipmentCustom extends React.Component {
                 {Steps.map((step, key) => {
                   return key === 2 &&
                     this.state.selectedFromCountry.value ===
-                    this.state.selectedToCountry.value ? null : (
+                      this.state.selectedToCountry.value ? null : (
                     <li>
                       <a
                         className={step.classname}
@@ -10877,7 +11369,7 @@ class ShipmentCustom extends React.Component {
                       icon
                     >
                       <h4 className="margin-right-auto text-color-black">
-                        Sender Information
+                        Sender Details
                       </h4>
                     </CardHeader>
                     <CardBody className="shipment-cardbody">
@@ -11020,7 +11512,7 @@ class ShipmentCustom extends React.Component {
                             inputProps={{
                               value:
                                 this.state.disableFromZip &&
-                                  !this.state.isZipAvailable
+                                !this.state.isZipAvailable
                                   ? ""
                                   : this.state.FromZipCode,
                               disabled: this.state.disableFromZip,
@@ -11735,6 +12227,220 @@ class ShipmentCustom extends React.Component {
                   </Card>
                 </div>
 
+                <div className="shipment-box">
+                  <Card>
+                    <CardHeader
+                      className="btn-right-outer"
+                      color="primary"
+                      icon
+                    >
+                      <h4 className="margin-right-auto text-color-black">
+                        Pickup Details
+                      </h4>
+                    </CardHeader>
+                    <CardBody className="shipment-cardbody">
+                      <GridContainer className="MuiGrid-justify-xs-center">
+                        <GridItem xs={12} sm={12} md={3}>
+                          <FormControl fullWidth>
+                            <Autocomplete
+                              id="combo-box-demo"
+                              options={pickupVendorName}
+                              value={PickupVendorName}
+                              onChange={(event, value) =>
+                                this.selectChange(
+                                  event,
+                                  value,
+                                  "PickupProvider"
+                                )
+                              }
+                              getOptionLabel={(option) => option.label}
+                              renderInput={(params) => (
+                                <TextField
+                                  {...params}
+                                  label="Pickup Provider"
+                                  margin="normal"
+                                  fullWidth
+                                  error={this.state.pickupProviderErr}
+                                  helperText={
+                                    this.state.pickupProviderHelperText
+                                  }
+                                />
+                              )}
+                            />
+                          </FormControl>
+                        </GridItem>
+
+                        <GridItem id="NonFedexDates" xs={12} sm={12} md={3}>
+                          <div className="date-input mt-17 slam">
+                            <InputLabel className={classes.label}>
+                              Pickup Date
+                            </InputLabel>
+                            <FormControl fullWidth className="palceholdercolor">
+                              <Datetime
+                                dateFormat={"MM/DD/YYYY"}
+                                timeFormat={false}
+                                value={PickupDate}
+                                onChange={(date) =>
+                                  this.additionalDateChange(date, "PickupDate")
+                                }
+                                dataTimezone="utc"
+                                disabled={this.state.pickupDisable}
+                                displayTimezone="local"
+                                closeOnSelect={true}
+                                // isValidDate={valid}
+                                renderInput={(params) => (
+                                  <TextField
+                                    disabled={this.state.pickupDisable}
+                                    {...params}
+                                    fullWidth
+                                    // placeholder="pickupdate"
+                                    error={this.state.pickupDateErr}
+                                    helperText={this.state.pickupDateHelperText}
+                                  />
+                                )}
+                              />
+                            </FormControl>
+                          </div>
+                        </GridItem>
+                        <GridItem id="FedexDates" xs={12} sm={12} md={3}>
+                          <div className="date-input mt-17 slam">
+                            <InputLabel className={classes.label}>
+                              Pickup Date
+                            </InputLabel>
+                            <FormControl fullWidth>
+                              <Datetime
+                                dateFormat={"MM/DD/YYYY"}
+                                timeFormat={false}
+                                value={PickupDate}
+                                onChange={(date) =>
+                                  this.additionalDateChange(date, "PickupDate")
+                                }
+                                closeOnSelect={true}
+                                isValidDate={valid1}
+                                renderInput={(params) => (
+                                  <TextField
+                                    {...params}
+                                    fullWidth
+                                    error={this.state.pickupDateErr}
+                                    helperText={this.state.pickupDateHelperText}
+                                  />
+                                )}
+                              />
+                            </FormControl>
+                          </div>
+                        </GridItem>
+                        <GridItem xs={12} sm={12} md={3}>
+                          <div>
+                            <FormControl
+                              fullWidth
+                              error={this.state.ReadyTimeErr}
+                            >
+                              {/* <InputLabel className={classes.selectLabel}>
+                                Start Time
+                              </InputLabel> */}
+
+                              <Autocomplete
+                                id="combo-box-demo"
+                                options={readytimelists}
+                                disabled={this.state.pickupDisable}
+                                value={this.state.ReadytimeView}
+                                onChange={(event, value) =>
+                                  this.selectChange(event, value, "ReadyTime")
+                                }
+                                getOptionLabel={(option) => option.label}
+                                renderInput={(params) => (
+                                  <TextField
+                                    {...params}
+                                    label="Start Time"
+                                    margin="normal"
+                                    fullWidth
+                                  />
+                                )}
+                              />
+                            </FormControl>
+                            <span
+                              id="readytime"
+                              style={{ color: "red", fontSize: "12px" }}
+                            >
+                              {this.state.ReadyTimeErrHelperText}
+                            </span>
+                          </div>
+                        </GridItem>
+                        <GridItem xs={12} sm={12} md={3} className="z-index-9">
+                          <div>
+                            <FormControl
+                              fullWidth
+                              error={this.state.AvailableTimeErr}
+                            >
+                              {/* <InputLabel className={classes.selectLabel}>
+                                End Time
+                              </InputLabel> */}
+                              <Autocomplete
+                                id="combo-box-demo"
+                                disabled={this.state.pickupDisable}
+                                options={avalibletimelists}
+                                value={this.state.availibletimeView}
+                                onChange={(event, value) =>
+                                  this.selectChange(
+                                    event,
+                                    value,
+                                    "AvailableTime"
+                                  )
+                                }
+                                getOptionLabel={(option) => option.label}
+                                renderInput={(params) => (
+                                  <TextField
+                                    {...params}
+                                    label="End Time"
+                                    margin="normal"
+                                    fullWidth
+                                  />
+                                )}
+                              />
+
+                              {/* <Select
+                                className="filter-wrap"
+                                id="AvailableTime"
+                                name="AvailableTime"
+                                value={this.state.AvailableTime}
+                                // className="form-control"
+                                onChange={(event) =>
+                                  this.selectChange(event, "", "AvailableTime")
+                                }
+                              >
+                                {this.AvailableTimeList()} */}
+                              {/* </Select> */}
+                            </FormControl>
+                            <span
+                              id="availabletime"
+                              style={{ color: "red", fontSize: "12px" }}
+                            >
+                              {this.state.AvailableTimeErrHelperText}
+                            </span>
+                          </div>
+                        </GridItem>
+                        <GridItem xs={12} sm={12} md={3}>
+                          <CustomInput
+                            formControlProps={{ fullWidth: true }}
+                            labelText="Special Instruction (Max 29 Char)"
+                            error={this.state.NotesforPickupErr}
+                            helperText={this.state.NotesforPickupHelperText}
+                            inputProps={{
+                              disabled: this.state.pickupDisable,
+                              value: this.state.NotesforPickup,
+                              onChange: (e) =>
+                                this.handleAdditionalChange(
+                                  e,
+                                  "NotesforPickup"
+                                ),
+                            }}
+                          />
+                        </GridItem>
+                      </GridContainer>
+                    </CardBody>
+                  </Card>
+                </div>
+
                 <div className="shipment-box mb-0">
                   <Card>
                     <CardHeader
@@ -11748,7 +12454,7 @@ class ShipmentCustom extends React.Component {
                     </CardHeader>
                     <CardBody className="shipment-cardbody">
                       <GridContainer>
-                        <GridItem xs={12} sm={4} md={4}>
+                        <GridItem sm={4} md={4}>
                           <CustomInput
                             labelText="Ship Date"
                             id="proposaltype"
@@ -11769,7 +12475,7 @@ class ShipmentCustom extends React.Component {
                             }}
                           />
                         </GridItem>
-                        <GridItem xs={12} sm={12} md={4}>
+                        <GridItem sm={4} md={4}>
                           <div className="select-spl">
                             <FormControl fullWidth>
                               <InputLabel
@@ -11810,7 +12516,7 @@ class ShipmentCustom extends React.Component {
                             </FormControl>
                           </div>
                         </GridItem>
-                        <GridItem xs={12} sm={12} md={4}>
+                        <GridItem sm={4} md={4}>
                           <div className="select-spl">
                             <FormControl fullWidth>
                               <InputLabel
@@ -11863,6 +12569,37 @@ class ShipmentCustom extends React.Component {
                       {this.state.ShipmentType.value === "Ocean" ? (
                         <>
                           <GridContainer>
+                            {this.state.Access.WriteAccess ? (
+                              <GridItem sm={4} md={4}>
+                                <div className="date-input mt-17 slam">
+                                  <InputLabel className={classes.label}>
+                                    Custom Clearance Date
+                                  </InputLabel>
+                                  <FormControl fullWidth>
+                                    <Datetime
+                                      dateFormat={"MM/DD/YYYY"}
+                                      timeFormat={false}
+                                      value={CustomClearanceDate}
+                                      onChange={(date) =>
+                                        this.additionalDateChange(
+                                          date,
+                                          "CustomClearanceDate"
+                                        )
+                                      }
+                                      closeOnSelect={true}
+                                      // renderInput={(params) => (
+                                      //   <TextField
+                                      //     {...params}
+                                      //     fullWidth
+                                      //     error={this.state.pickupDateErr}
+                                      //     helperText={this.state.pickupDateHelperText}
+                                      //   />
+                                      // )}
+                                    />
+                                  </FormControl>
+                                </div>
+                              </GridItem>
+                            ) : null}
                             <GridItem sm={4} md={4}>
                               <div className="select-spl">
                                 <FormControl
@@ -11957,12 +12694,6 @@ class ShipmentCustom extends React.Component {
                                 </FormControl>
                               </div>
                             </GridItem>
-                            {/* </>
-                            : null
-                            } */}
-                          </GridContainer>
-                          {/* {isBackIndia ?  */}
-                          <GridContainer>
                             <GridItem sm={4} md={4}>
                               <div className="select-spl">
                                 <FormControl
@@ -12038,6 +12769,12 @@ class ShipmentCustom extends React.Component {
                                 </FormControl>
                               </div>
                             </GridItem>
+                            {/* </>
+                            : null
+                            } */}
+                          </GridContainer>
+                          {/* {isBackIndia ?  */}
+                          <GridContainer>
                             <GridItem sm={4} md={4}>
                               <div className="select-spl">
                                 <FormControl
@@ -12075,12 +12812,6 @@ class ShipmentCustom extends React.Component {
                                 </FormControl>
                               </div>
                             </GridItem>
-                          </GridContainer>
-                          {/* :
-                            null
-                        } */}
-                          {/* {isBackIndia ? */}
-                          <GridContainer>
                             <GridItem sm={4} md={4} className="z-index-9">
                               <div
                                 style={{ marginTop: "18px" }}
@@ -12186,161 +12917,47 @@ class ShipmentCustom extends React.Component {
                                 </FormControl>
                               </div>
                             </GridItem>
+                            {this.state.ShipmentType.value === "Ocean" ? (
+                              <GridItem sm={4} md={4}>
+                                <FormControl fullWidth>
+                                  <Autocomplete
+                                    id="combo-box-demo"
+                                    options={containerName}
+                                    value={ContainerName}
+                                    onChange={(event, value) =>
+                                      this.selectChange(
+                                        event,
+                                        value,
+                                        "ContainerName"
+                                      )
+                                    }
+                                    getOptionLabel={(option) => option.label}
+                                    renderInput={(params) => (
+                                      <TextField
+                                        {...params}
+                                        label="Container Name"
+                                        margin="normal"
+                                        fullWidth
+                                      />
+                                    )}
+                                  />
+                                </FormControl>
+                              </GridItem>
+                            ) : null}
                           </GridContainer>
+
+                          {/* :
+                            null
+                        } */}
+                          {/* {isBackIndia ? */}
+                          {/* <GridContainer>
+                           
+                          </GridContainer> */}
                           {/* :
                             null 
                         } */}
                         </>
                       ) : null}
-                      <GridContainer>
-
-                        {/* {IsPickup ? ( */}
-
-                        {/* Pickup Provider */}
-                        <GridItem xs={12} sm={12} md={4}>
-                          <FormControl fullWidth>
-                            <Autocomplete
-                              id="combo-box-demo"
-                              options={pickupVendorName}
-                              value={PickupVendorName}
-                              onChange={(event, value) =>
-                                this.selectChange(
-                                  event,
-                                  value,
-                                  "PickupProvider"
-                                )
-                              }
-                              getOptionLabel={(option) => option.label}
-                              renderInput={(params) => (
-                                <TextField
-                                  {...params}
-                                  label="Pickup Provider"
-                                  margin="normal"
-                                  fullWidth
-                                  error={this.state.pickupProviderErr}
-                                  helperText={
-                                    this.state.pickupProviderHelperText
-                                  }
-                                />
-                              )}
-                            />
-                          </FormControl>
-                        </GridItem>
-                        <GridItem id="FedexDates" xs={12} sm={12} md={4}>
-                          <div className="date-input mt-17 slam">
-                            <InputLabel className={classes.label}>
-                              Pickup Date
-                            </InputLabel>
-                            <FormControl fullWidth>
-                              <Datetime
-                                dateFormat={"MM/DD/YYYY"}
-                                timeFormat={false}
-                                value={PickupDate}
-                                onChange={(date) =>
-                                  this.additionalDateChange(date, "PickupDate")
-                                }
-                                closeOnSelect={true}
-                                isValidDate={valid1}
-                                renderInput={(params) => (
-                                  <TextField
-                                    {...params}
-                                    fullWidth
-                                    error={this.state.pickupDateErr}
-                                    helperText={this.state.pickupDateHelperText}
-                                  />
-                                )}
-                              />
-                            </FormControl>
-                          </div>
-                        </GridItem>
-                        <GridItem id="NonFedexDates" xs={12} sm={12} md={4}>
-                          <div className="date-input mt-17 slam">
-                            <InputLabel className={classes.label}>
-                              Pickup Date
-                            </InputLabel>
-                            <FormControl fullWidth>
-                              <Datetime
-                                dateFormat={"MM/DD/YYYY"}
-                                timeFormat={false}
-                                value={PickupDate}
-                                onChange={(date) =>
-                                  this.additionalDateChange(date, "PickupDate")
-                                }
-                                closeOnSelect={true}
-                                // isValidDate={valid}
-                                renderInput={(params) => (
-                                  <TextField
-                                    {...params}
-                                    fullWidth
-                                    error={this.state.pickupDateErr}
-                                    helperText={this.state.pickupDateHelperText}
-                                  />
-                                )}
-                              />
-                            </FormControl>
-                          </div>
-                        </GridItem>
-
-                        {/* ) : null} */}
-                        {this.state.ShipmentType.value === "Ocean" ? (
-                          <GridItem xs={12} sm={12} md={4}>
-                            <FormControl fullWidth>
-                              <Autocomplete
-                                id="combo-box-demo"
-                                options={containerName}
-                                value={ContainerName}
-                                onChange={(event, value) =>
-                                  this.selectChange(
-                                    event,
-                                    value,
-                                    "ContainerName"
-                                  )
-                                }
-                                getOptionLabel={(option) => option.label}
-                                renderInput={(params) => (
-                                  <TextField
-                                    {...params}
-                                    label="Container Name"
-                                    margin="normal"
-                                    fullWidth
-                                  />
-                                )}
-                              />
-                            </FormControl>
-                          </GridItem>
-                        ) : null}
-                        {this.state.Access.WriteAccess ? (
-                          <GridItem xs={12} sm={12} md={4}>
-                            <div className="date-input mt-17 slam">
-                              <InputLabel className={classes.label}>
-                                Custom Clearance Date
-                              </InputLabel>
-                              <FormControl fullWidth>
-                                <Datetime
-                                  dateFormat={"MM/DD/YYYY"}
-                                  timeFormat={false}
-                                  value={CustomClearanceDate}
-                                  onChange={(date) =>
-                                    this.additionalDateChange(
-                                      date,
-                                      "CustomClearanceDate"
-                                    )
-                                  }
-                                  closeOnSelect={true}
-                                // renderInput={(params) => (
-                                //   <TextField
-                                //     {...params}
-                                //     fullWidth
-                                //     error={this.state.pickupDateErr}
-                                //     helperText={this.state.pickupDateHelperText}
-                                //   />
-                                // )}
-                                />
-                              </FormControl>
-                            </div>
-                          </GridItem>
-                        ) : null}
-                      </GridContainer>
                     </CardBody>
                   </Card>
                 </div>
@@ -12359,7 +12976,8 @@ class ShipmentCustom extends React.Component {
                         id="TotalPackages"
                         inputProps={{
                           value: TotalPackages,
-                          onChange: (event) => this.handlePackageNoChange(event),
+                          onChange: (event) =>
+                            this.handlePackageNoChange(event),
                         }}
                       />
                     </GridItem>
@@ -12540,7 +13158,7 @@ class ShipmentCustom extends React.Component {
                                     </td>
                                   )}
                                   {this.state.ShipmentType.value !==
-                                    "Ocean" ? null : (
+                                  "Ocean" ? null : (
                                     <td>
                                       <CustomInput
                                         inputProps={{
@@ -13077,37 +13695,34 @@ class ShipmentCustom extends React.Component {
                             </table>
                           </div>
                         </GridItem>
-
                       </GridContainer>
                     ) : null}
                   </CardBody>
                 </Card>
-                {this.state.PickupVendorName.value == 68 && this.state.checkPickup == "1" ? (
+                {this.state.PickupVendorName.value == 68 &&
+                this.state.checkPickup == "1" ? (
                   <Card>
-
-                    <CardHeader className="btn-right-outer" color="primary" icon>
+                    <CardHeader
+                      className="btn-right-outer"
+                      color="primary"
+                      icon
+                    >
                       <h4 className="margin-right-auto text-color-black">
                         Schedule Pickup
                       </h4>
-
-
                     </CardHeader>
                     <CardBody>
                       <GridContainer>
-
-
-
                         <GridItem xs={12} sm={12} md={12}>
-
                           <div className="package-table">
                             <table className="Tracking-table">
                               <thead>
                                 <tr>
                                   <th>Number</th>
-                                  <th>Date</th>
+                                  {/* <th>Date</th> */}
                                   <th>Tracking Id</th>
                                   <th>Pickup Conf No.</th>
-                                  {/* <th>Pickup Date</th> */}
+                                  <th>Pickup Date</th>
                                   <th>Comments</th>
                                   <th>Status</th>
                                   <th>Action</th>
@@ -13117,13 +13732,8 @@ class ShipmentCustom extends React.Component {
                             </table>
                           </div>
                         </GridItem>
-
                       </GridContainer>
-
                     </CardBody>
-
-
-
                   </Card>
                 ) : null}
 
@@ -13475,9 +14085,9 @@ class ShipmentCustom extends React.Component {
                   value:
                     this.state.Access.DeleteAccess !== 1
                       ? "XXXX XXXX XXXX " +
-                      this.state.PaymentShowData.CardNumber?.toString().slice(
-                        this.state.PaymentShowData.CardNumber.length - 4
-                      )
+                        this.state.PaymentShowData.CardNumber?.toString().slice(
+                          this.state.PaymentShowData.CardNumber.length - 4
+                        )
                       : this.state.PaymentShowData.CardNumber,
                   disabled: true,
                 }}
@@ -13603,8 +14213,8 @@ class ShipmentCustom extends React.Component {
                       value: this.state.sendMailInfo.Frommail,
                       disabled:
                         this.state.sendMailInfo.Type === "InvoiceMessage" ||
-                          this.state.useraccess.userModuleAccess[15]
-                            .DeleteAccess === 0
+                        this.state.useraccess.userModuleAccess[15]
+                          .DeleteAccess === 0
                           ? true
                           : false,
                       onChange: (event) => {
@@ -13636,8 +14246,8 @@ class ShipmentCustom extends React.Component {
                       value: this.state.sendMailInfo.TOmail,
                       disabled:
                         this.state.sendMailInfo.Type === "InvoiceMessage" ||
-                          this.state.useraccess.userModuleAccess[15]
-                            .DeleteAccess === 0
+                        this.state.useraccess.userModuleAccess[15]
+                          .DeleteAccess === 0
                           ? true
                           : false,
                       onChange: (event) => {
@@ -13671,8 +14281,8 @@ class ShipmentCustom extends React.Component {
                       },
                       disabled:
                         this.state.sendMailInfo.Type === "InvoiceMessage" ||
-                          this.state.useraccess.userModuleAccess[15]
-                            .DeleteAccess === 0
+                        this.state.useraccess.userModuleAccess[15]
+                          .DeleteAccess === 0
                           ? true
                           : false,
                       value: this.state.sendMailInfo.CCmail,
@@ -13724,9 +14334,9 @@ class ShipmentCustom extends React.Component {
               <GridContainer>
                 <GridItem xs={12} sm={12} md={12}>
                   {this.state.sendMailInfo.Type === "Invoice" ||
-                    this.state.sendMailInfo.Type === "Contract" ||
-                    this.state.sendMailInfo.Type === "InvoiceMessage" ||
-                    this.state.sendMailInfo.Type === "PrepaidLables" ? (
+                  this.state.sendMailInfo.Type === "Contract" ||
+                  this.state.sendMailInfo.Type === "InvoiceMessage" ||
+                  this.state.sendMailInfo.Type === "PrepaidLables" ? (
                     <p>
                       <div
                         dangerouslySetInnerHTML={{
@@ -13804,7 +14414,7 @@ class ShipmentCustom extends React.Component {
                 }}
                 filterlist={
                   this.props.history.location.state &&
-                    this.props.history.location.state.filterlist !== undefined
+                  this.props.history.location.state.filterlist !== undefined
                     ? this.props.history.location.state.filterlist
                     : null
                 }
@@ -13812,7 +14422,7 @@ class ShipmentCustom extends React.Component {
                 TotalCFT={this.state.DocumentTotalCFT}
                 ShippingID={
                   this.props.location.state &&
-                    this.props.location.state.ShipppingID
+                  this.props.location.state.ShipppingID
                     ? this.props.location.state.ShipppingID
                     : null
                 }
@@ -13829,7 +14439,7 @@ class ShipmentCustom extends React.Component {
                 sendState={this.sendState()}
                 sortlist={
                   this.props.history.location.state &&
-                    this.props.history.location.state.sortlist !== undefined
+                  this.props.history.location.state.sortlist !== undefined
                     ? this.props.history.location.state.sortlist
                     : null
                 }
@@ -13855,113 +14465,113 @@ class ShipmentCustom extends React.Component {
           </Dialog>
         </div>
         <div>
-        <Dialog
-                    open={this.state.IsfedexLabelGeneratePickup}
-                    aria-labelledby="alert-dialog-title"
-                    aria-describedby="alert-dialog-description"
-                  >
-                    <DialogTitle id="alert-dialog-title">
-                      {"Confirm Pickup Schedule"}
-                    </DialogTitle>
-                    <DialogContent>
-                      <DialogContentText id="alert-dialog-description">
-                        Are you sure want to generate a Pickup?<br />
-
-                        Pickup Date: {this.state.PickupDate}
-                      </DialogContentText>
-                    </DialogContent>
-                    <DialogActions>
-                      <Button
-                        onClick={this.handleClickCancelClosePickup}
-                        color="primary"
-                      >
-                        Close
-                      </Button>
-                      <Button
-                        onClick={() =>
-                          this.GenratePickupConfirmation(
-                            this.state.FedexTrackNumber,this.state.FedexTrackAddorUpdate,this.state.PickupID
-                          )
-                        }
-                        color="primary"
-                        autoFocus
-                      >
-                        Generate Pickup
-                      </Button>
-                    </DialogActions>
-                  </Dialog>
+          <Dialog
+            open={this.state.IsfedexLabelGeneratePickup}
+            aria-labelledby="alert-dialog-title"
+            aria-describedby="alert-dialog-description"
+          >
+            <DialogTitle id="alert-dialog-title">
+              {"Confirm Pickup Schedule"}
+            </DialogTitle>
+            <DialogContent>
+              <DialogContentText id="alert-dialog-description">
+                Are you sure want to generate a Pickup?
+                <br />
+                Pickup Date: {this.state.PickupDate}
+                <br />
+                Pickup Time: {this.state.ReadyTime} - {this.state.AvailableTime}
+                <br />
+                Special Instruction : {this.state.NotesforPickup}
+              </DialogContentText>
+            </DialogContent>
+            <DialogActions>
+              <Button
+                onClick={this.handleClickCancelClosePickup}
+                color="primary"
+              >
+                Close
+              </Button>
+              <Button
+                onClick={() =>
+                  this.GenratePickupConfirmation(
+                    this.state.FedexTrackNumber,
+                    this.state.FedexTrackAddorUpdate,
+                    this.state.PickupID
+                  )
+                }
+                color="primary"
+                autoFocus
+              >
+                Generate Pickup
+              </Button>
+            </DialogActions>
+          </Dialog>
         </div>
         <div>
-        <Dialog
-                      open={this.state.IsfedexLabelOpenPickup}
-                      aria-labelledby="alert-dialog-title"
-                      aria-describedby="alert-dialog-description"
-                      overlayStyle={{backgroundColor: 'transparent'}}
-                    className="PickupCancel"
-                    >
-                      <DialogTitle id="alert-dialog-title">
-                        {"Confirm Cancellation"}
-                      </DialogTitle>
-                      <DialogContent>
-                        <DialogContentText id="alert-dialog-description">
-                          Are you sure want to cancel a Pickup?
-                        </DialogContentText>
-                      </DialogContent>
-                      <DialogActions>
-                        <Button
-                          onClick={this.handleClickCancelPickup}
-                          color="primary"
-                        >
-                          Close
-                        </Button>
-                        <Button
-                          onClick={() =>
-                            this.deleteFedexlabelPickup(
-                              this.state.cancelTrackNumber,this.state.cancelPickupID
-                            )
-                          }
-                          color="primary"
-                          autoFocus
-                        >
-                          Cancel Pickup
-                        </Button>
-                      </DialogActions>
-                    </Dialog>
+          <Dialog
+            open={this.state.IsfedexLabelOpenPickup}
+            aria-labelledby="alert-dialog-title"
+            aria-describedby="alert-dialog-description"
+            overlayStyle={{ backgroundColor: "transparent" }}
+            className="PickupCancel"
+          >
+            <DialogTitle id="alert-dialog-title">
+              {"Confirm Cancellation"}
+            </DialogTitle>
+            <DialogContent>
+              <DialogContentText id="alert-dialog-description">
+                Are you sure want to cancel a Pickup?
+              </DialogContentText>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={this.handleClickCancelPickup} color="primary">
+                Close
+              </Button>
+              <Button
+                onClick={() =>
+                  this.deleteFedexlabelPickup(
+                    this.state.cancelTrackNumber,
+                    this.state.cancelPickupID
+                  )
+                }
+                color="primary"
+                autoFocus
+              >
+                Cancel Pickup
+              </Button>
+            </DialogActions>
+          </Dialog>
         </div>
         <div>
-                  <Dialog
-                    open={this.state.IsfedexLabelOpen}
-                    aria-labelledby="alert-dialog-title"
-                    aria-describedby="alert-dialog-description"
-                  >
-                    <DialogTitle id="alert-dialog-title">
-                      {"Confirm Cancellation"}
-                    </DialogTitle>
-                    <DialogContent>
-                      <DialogContentText id="alert-dialog-description">
-                        Are you sure want to cancel a label?
-                      </DialogContentText>
-                    </DialogContent>
-                    <DialogActions>
-                      <Button onClick={this.handleClickCancel} color="primary">
-                        Close
-                      </Button>
-                      <Button
-                        onClick={() =>
-                          this.deleteFedexlabel(this.state.setTrackingValue)
-                        }
-                        color="primary"
-                        autoFocus
-                      >
-                        Cancel Label
-                      </Button>
-                    </DialogActions>
-                  </Dialog>
-
-                
-
-                  
-                </div>
+          <Dialog
+            open={this.state.IsfedexLabelOpen}
+            aria-labelledby="alert-dialog-title"
+            aria-describedby="alert-dialog-description"
+          >
+            <DialogTitle id="alert-dialog-title">
+              {"Confirm Cancellation"}
+            </DialogTitle>
+            <DialogContent>
+              <DialogContentText id="alert-dialog-description">
+                Are you sure want to cancel a label?
+              </DialogContentText>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={this.handleClickCancel} color="primary">
+                Close
+              </Button>
+              <Button
+                onClick={() =>
+                  this.deleteFedexlabel(this.state.setTrackingValue)
+                }
+                color="primary"
+                autoFocus
+              >
+                Cancel Label
+              </Button>
+            </DialogActions>
+          </Dialog>
+        </div>
         <div>
           <Dialog
             open={this.state.ShowGeneratedPriperdlable}
@@ -13974,7 +14584,6 @@ class ShipmentCustom extends React.Component {
             <DialogContent>
               <DialogContentText id="alert-dialog-description">
                 Are you sure want to generate lable for this Service? <br />
-
               </DialogContentText>
             </DialogContent>
             <DialogActions>
@@ -14053,7 +14662,7 @@ class ShipmentCustom extends React.Component {
           </div>
           <div className="center">
             {this.props.history.location.state &&
-              this.props.history.location.state.searchData ? (
+            this.props.history.location.state.searchData ? (
               <Button onClick={() => this.handleSearchBack()} color="secondary">
                 Back To Search
               </Button>

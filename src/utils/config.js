@@ -1,5 +1,5 @@
-// const apiBase = 'http://192.168.1.91:3000/';
-// const apiBase = "http://localhost:4000/";
+//const apiBase = "http://192.168.1.91:3000/";
+//const apiBase = "http://localhost:4000/";
 // const apiBase = "https://phpstack-773983-2633738.cloudwaysapps.com/"; //cloud Production
 // const apiBase = "https://hubuatapi.sflworldwide.com/"; //cloud Production
 // const apiBase = "https://uatapi.sflworldwide.com:3434/"; // UAT
@@ -12,6 +12,6 @@
 // const apiBase = 'http://107.180.91.201:3001/' // uiInstance
 // const apiBase = 'http://server.evalueadd.com:9696/'; // Demo
 const apiBase = "https://hubapi.sflworldwide.com/"; // Production
-const fileBase = "https://docs.sflworldwide.com/document/"
+const fileBase = "https://docs.sflworldwide.com/document/";
 //const apiBase = "http://phpstack-773983-2633738.cloudwaysapps.com:4443/";
-export { apiBase,fileBase };
+export { apiBase, fileBase };

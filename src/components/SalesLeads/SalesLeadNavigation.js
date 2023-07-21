@@ -30,7 +30,7 @@ import Autocomplete from "@material-ui/lab/Autocomplete";
 import CheckBoxOutlineBlankIcon from "@material-ui/icons/CheckBoxOutlineBlank";
 import CheckBoxIcon from "@material-ui/icons/CheckBox";
 import Checkbox from "@material-ui/core/Checkbox";
-
+import zipcelx from "zipcelx";
 const useStyles = makeStyles((theme) => ({
   root: {
     width: 500,
@@ -70,6 +70,8 @@ class SalesLeadNavigation extends Component {
       ],
 
       //Sales Lead
+      fileSetName:
+        "SalesLead" + moment().format(CommonConfig.dateFormat.filename),
       IsDropDownShow: false,
       checkdata: "",
       ProposalData: [],
@@ -161,9 +163,10 @@ class SalesLeadNavigation extends Component {
     await this.getCountry();
     await this.managedby();
     await this.getFilterlist();
+    debugger;
     if (localStorage.getItem("SearchCount")) {
       var params = JSON.parse(localStorage.getItem("SearchCount"));
-      
+
       this.showHide("searchsaleslead");
       const filterNew = {
         field: params.field,
@@ -550,6 +553,7 @@ class SalesLeadNavigation extends Component {
   };
 
   filterDropDown = () => {
+    debugger;
     return this.state.selectFilter
       .filter(
         (x) =>
@@ -858,6 +862,35 @@ class SalesLeadNavigation extends Component {
     return IsValid;
   };
 
+  handelExportToExcel = (evt) => {
+    debugger;
+    if (this.state.SearchSalesLeadList.length > 0) {
+      const headData = Object.keys(this.state.SearchSalesLeadList[0]).map(
+        (col) => ({
+          value: col,
+          type: "string",
+        })
+      );
+
+      const bodyData = this.state.SearchSalesLeadList.map((item) =>
+        Object.values(item).map((value) => ({
+          value,
+          type: typeof value,
+        }))
+      );
+      const config = {
+        filename: this.state.fileSetName,
+        sheet: {
+          data: [headData, ...bodyData],
+          columns: headData.map((col) => ({ wch: 2000 })),
+        },
+      };
+      zipcelx(config);
+    } else {
+      cogoToast.error("Search sales lead to be downloaded");
+    }
+  };
+
   search = () => {
     if (this.validate()) {
       if (this.samefilter()) {
@@ -889,202 +922,208 @@ class SalesLeadNavigation extends Component {
           ) {
             if (filterList[i]["condition"] === "Start With") {
               if (i === 0) {
-                if(filterList[i]["columnname"] === "slm.CreatedOn"){
+                if (filterList[i]["columnname"] === "slm.CreatedOn") {
                   FinalStr =
-                  FinalStr + "date(" +
-                  filterList[i]["columnname"] +
-                  ") " +
-                  filterList[i]["conditionoperator"] +
-                  " '" +
-                  filterList[i]["value"] +
-                  "%'";
-                }else{
+                    FinalStr +
+                    "date(" +
+                    filterList[i]["columnname"] +
+                    ") " +
+                    filterList[i]["conditionoperator"] +
+                    " '" +
+                    filterList[i]["value"] +
+                    "%'";
+                } else {
                   FinalStr =
-                  FinalStr + 
-                  filterList[i]["columnname"] +
-                  " " +
-                  filterList[i]["conditionoperator"] +
-                  " '" +
-                  filterList[i]["value"] +
-                  "%'";
+                    FinalStr +
+                    filterList[i]["columnname"] +
+                    " " +
+                    filterList[i]["conditionoperator"] +
+                    " '" +
+                    filterList[i]["value"] +
+                    "%'";
                 }
               } else {
-                if(filterList[i]["columnname"] === "slm.CreatedOn"){
-                FinalStr =
-                  FinalStr +
-                  " " +
-                  operator +
-                  " " + "date(" +
-                  filterList[i]["columnname"] +
-                  ") " +
-                  filterList[i]["conditionoperator"] +
-                  " '" +
-                  filterList[i]["value"] +
-                  "%" +
-                  "'";
-                }
-                else{
+                if (filterList[i]["columnname"] === "slm.CreatedOn") {
                   FinalStr =
-                  FinalStr +
-                  " " +
-                  operator +
-                  " " + 
-                  filterList[i]["columnname"] +
-                  " " +
-                  filterList[i]["conditionoperator"] +
-                  " '" +
-                  filterList[i]["value"] +
-                  "%" +
-                  "'";
+                    FinalStr +
+                    " " +
+                    operator +
+                    " " +
+                    "date(" +
+                    filterList[i]["columnname"] +
+                    ") " +
+                    filterList[i]["conditionoperator"] +
+                    " '" +
+                    filterList[i]["value"] +
+                    "%" +
+                    "'";
+                } else {
+                  FinalStr =
+                    FinalStr +
+                    " " +
+                    operator +
+                    " " +
+                    filterList[i]["columnname"] +
+                    " " +
+                    filterList[i]["conditionoperator"] +
+                    " '" +
+                    filterList[i]["value"] +
+                    "%" +
+                    "'";
                 }
               }
             } else if (filterList[i]["condition"] === "Ends With") {
               if (i === 0) {
-                if(filterList[i]["columnname"] === "slm.CreatedOn"){
-                FinalStr =
-                  FinalStr + "date(" +
-                  filterList[i]["columnname"] +
-                  ") " +
-                  filterList[i]["conditionoperator"] +
-                  " '" +
-                  "%" +
-                  filterList[i]["value"] +
-                  "'";
-                }
-                else{
+                if (filterList[i]["columnname"] === "slm.CreatedOn") {
                   FinalStr =
-                  FinalStr + 
-                  filterList[i]["columnname"] +
-                  " " +
-                  filterList[i]["conditionoperator"] +
-                  " '" +
-                  "%" +
-                  filterList[i]["value"] +
-                  "'";
+                    FinalStr +
+                    "date(" +
+                    filterList[i]["columnname"] +
+                    ") " +
+                    filterList[i]["conditionoperator"] +
+                    " '" +
+                    "%" +
+                    filterList[i]["value"] +
+                    "'";
+                } else {
+                  FinalStr =
+                    FinalStr +
+                    filterList[i]["columnname"] +
+                    " " +
+                    filterList[i]["conditionoperator"] +
+                    " '" +
+                    "%" +
+                    filterList[i]["value"] +
+                    "'";
                 }
               } else {
-                if(filterList[i]["columnname"] === "slm.CreatedOn"){
-                FinalStr =
-                  FinalStr +
-                  " " +
-                  operator +
-                  " " + "date(" +
-                  filterList[i]["columnname"] +
-                  ") " +
-                  filterList[i]["conditionoperator"] +
-                  " '" +
-                  "%" +
-                  filterList[i]["value"] +
-                  "'";
-                }else{
+                if (filterList[i]["columnname"] === "slm.CreatedOn") {
                   FinalStr =
-                  FinalStr +
-                  " " +
-                  operator +
-                  " " + 
-                  filterList[i]["columnname"] +
-                  " " +
-                  filterList[i]["conditionoperator"] +
-                  " '" +
-                  "%" +
-                  filterList[i]["value"] +
-                  "'";
+                    FinalStr +
+                    " " +
+                    operator +
+                    " " +
+                    "date(" +
+                    filterList[i]["columnname"] +
+                    ") " +
+                    filterList[i]["conditionoperator"] +
+                    " '" +
+                    "%" +
+                    filterList[i]["value"] +
+                    "'";
+                } else {
+                  FinalStr =
+                    FinalStr +
+                    " " +
+                    operator +
+                    " " +
+                    filterList[i]["columnname"] +
+                    " " +
+                    filterList[i]["conditionoperator"] +
+                    " '" +
+                    "%" +
+                    filterList[i]["value"] +
+                    "'";
                 }
               }
             } else if (filterList[i]["condition"] === "Contains") {
               if (i === 0) {
-                if(filterList[i]["columnname"] === "slm.CreatedOn"){
-                FinalStr =
-                  FinalStr + "date(" +
-                  filterList[i]["columnname"] +
-                  ") " +
-                  filterList[i]["conditionoperator"] +
-                  " '%" +
-                  filterList[i]["value"] +
-                  "%'";
-                }else{
+                if (filterList[i]["columnname"] === "slm.CreatedOn") {
                   FinalStr =
-                  FinalStr + 
-                  filterList[i]["columnname"] +
-                  " " +
-                  filterList[i]["conditionoperator"] +
-                  " '%" +
-                  filterList[i]["value"] +
-                  "%'";
+                    FinalStr +
+                    "date(" +
+                    filterList[i]["columnname"] +
+                    ") " +
+                    filterList[i]["conditionoperator"] +
+                    " '%" +
+                    filterList[i]["value"] +
+                    "%'";
+                } else {
+                  FinalStr =
+                    FinalStr +
+                    filterList[i]["columnname"] +
+                    " " +
+                    filterList[i]["conditionoperator"] +
+                    " '%" +
+                    filterList[i]["value"] +
+                    "%'";
                 }
               } else {
-                if(filterList[i]["columnname"] === "slm.CreatedOn"){
-                FinalStr =
-                  FinalStr +
-                  " " +
-                  operator +
-                  " " + "date(" +
-                  filterList[i]["columnname"] +
-                  ") " +
-                  filterList[i]["conditionoperator"] +
-                  " '%" +
-                  filterList[i]["value"] +
-                  "%'";
-                }else{
+                if (filterList[i]["columnname"] === "slm.CreatedOn") {
                   FinalStr =
-                  FinalStr +
-                  " " +
-                  operator +
-                  " " +
-                  filterList[i]["columnname"] +
-                  " " +
-                  filterList[i]["conditionoperator"] +
-                  " '%" +
-                  filterList[i]["value"] +
-                  "%'";
+                    FinalStr +
+                    " " +
+                    operator +
+                    " " +
+                    "date(" +
+                    filterList[i]["columnname"] +
+                    ") " +
+                    filterList[i]["conditionoperator"] +
+                    " '%" +
+                    filterList[i]["value"] +
+                    "%'";
+                } else {
+                  FinalStr =
+                    FinalStr +
+                    " " +
+                    operator +
+                    " " +
+                    filterList[i]["columnname"] +
+                    " " +
+                    filterList[i]["conditionoperator"] +
+                    " '%" +
+                    filterList[i]["value"] +
+                    "%'";
                 }
               }
             } else {
               if (i === 0) {
-                if(filterList[i]["columnname"] === "slm.CreatedOn"){
-                FinalStr =
-                  FinalStr + "date(" +
-                  filterList[i]["columnname"] +
-                  ") " +
-                  filterList[i]["conditionoperator"] +
-                  " '" +
-                  filterList[i]["value"] +
-                  "'";
-                }else{
+                if (filterList[i]["columnname"] === "slm.CreatedOn") {
                   FinalStr =
-                  FinalStr + 
-                  filterList[i]["columnname"] +
-                  " " +
-                  filterList[i]["conditionoperator"] +
-                  " '" +
-                  filterList[i]["value"] +
-                  "'";
+                    FinalStr +
+                    "date(" +
+                    filterList[i]["columnname"] +
+                    ") " +
+                    filterList[i]["conditionoperator"] +
+                    " '" +
+                    filterList[i]["value"] +
+                    "'";
+                } else {
+                  FinalStr =
+                    FinalStr +
+                    filterList[i]["columnname"] +
+                    " " +
+                    filterList[i]["conditionoperator"] +
+                    " '" +
+                    filterList[i]["value"] +
+                    "'";
                 }
               } else {
-                if(filterList[i]["columnname"] === "slm.CreatedOn"){
-                FinalStr =
-                  FinalStr +
-                  " " +
-                  operator +
-                  " " + "date(" +
-                  filterList[i]["columnname"] +
-                  ") " +
-                  filterList[i]["conditionoperator"] +
-                  " '" +
-                  filterList[i]["value"] +
-                  "'";
-                }else{
+                if (filterList[i]["columnname"] === "slm.CreatedOn") {
                   FinalStr =
-                  FinalStr +
-                  " " +
-                  operator +
-                  " " + 
-                  filterList[i]["columnname"] +
-                  " " +
-                  filterList[i]["conditionoperator"] +
-                  " '" +
-                  filterList[i]["value"] +
-                  "'";
+                    FinalStr +
+                    " " +
+                    operator +
+                    " " +
+                    "date(" +
+                    filterList[i]["columnname"] +
+                    ") " +
+                    filterList[i]["conditionoperator"] +
+                    " '" +
+                    filterList[i]["value"] +
+                    "'";
+                } else {
+                  FinalStr =
+                    FinalStr +
+                    " " +
+                    operator +
+                    " " +
+                    filterList[i]["columnname"] +
+                    " " +
+                    filterList[i]["conditionoperator"] +
+                    " '" +
+                    filterList[i]["value"] +
+                    "'";
                 }
               }
             }
@@ -1098,50 +1137,52 @@ class SalesLeadNavigation extends Component {
             }
 
             if (i === 0) {
-              if(filterList[i]["columnname"] === "slm.CreatedOn"){
-              FinalStr =
-                FinalStr + "date(" +
-                filterList[i]["columnname"] +
-                ") " +
-                filterList[i]["conditionoperator"] +
-                " '" +
-                filterList[i]["value"] +
-                "'";
-              }else{
+              if (filterList[i]["columnname"] === "slm.CreatedOn") {
                 FinalStr =
-                FinalStr + 
-                filterList[i]["columnname"] +
-                " " +
-                filterList[i]["conditionoperator"] +
-                " '" +
-                filterList[i]["value"] +
-                "'";
+                  FinalStr +
+                  "date(" +
+                  filterList[i]["columnname"] +
+                  ") " +
+                  filterList[i]["conditionoperator"] +
+                  " '" +
+                  filterList[i]["value"] +
+                  "'";
+              } else {
+                FinalStr =
+                  FinalStr +
+                  filterList[i]["columnname"] +
+                  " " +
+                  filterList[i]["conditionoperator"] +
+                  " '" +
+                  filterList[i]["value"] +
+                  "'";
               }
             } else {
-              if(filterList[i]["columnname"] === "slm.CreatedOn"){
-              FinalStr =
-                FinalStr +
-                " " +
-                operator +
-                " " + "date(" +
-                filterList[i]["columnname"] +
-                ") " +
-                filterList[i]["conditionoperator"] +
-                " '" +
-                filterList[i]["value"] +
-                "'";
-              }else{
+              if (filterList[i]["columnname"] === "slm.CreatedOn") {
                 FinalStr =
-                FinalStr +
-                " " +
-                operator +
-                " " + 
-                filterList[i]["columnname"] +
-                " " +
-                filterList[i]["conditionoperator"] +
-                " '" +
-                filterList[i]["value"] +
-                "'";
+                  FinalStr +
+                  " " +
+                  operator +
+                  " " +
+                  "date(" +
+                  filterList[i]["columnname"] +
+                  ") " +
+                  filterList[i]["conditionoperator"] +
+                  " '" +
+                  filterList[i]["value"] +
+                  "'";
+              } else {
+                FinalStr =
+                  FinalStr +
+                  " " +
+                  operator +
+                  " " +
+                  filterList[i]["columnname"] +
+                  " " +
+                  filterList[i]["conditionoperator"] +
+                  " '" +
+                  filterList[i]["value"] +
+                  "'";
               }
             }
           }
@@ -1241,6 +1282,7 @@ class SalesLeadNavigation extends Component {
   };
 
   filterRow = () => {
+    debugger;
     return this.state.filtered.map((selectfield, idx) => {
       const countrylist = this.state.CountryList.map((countrylist) => {
         return { value: countrylist.CountryID, label: countrylist.CountryName };
@@ -1482,6 +1524,7 @@ class SalesLeadNavigation extends Component {
   };
 
   basicFilter = () => {
+    debugger;
     return this.state.filtered.map((selectfield, idx) => {
       return (
         <tr>
@@ -1965,9 +2008,7 @@ class SalesLeadNavigation extends Component {
           if (CommonConfig.isEmpty(data.CreatedOn)) {
             return moment().format("MM/DD/YYYY");
           } else {
-            return moment(data.CreatedOn).format(
-              "MM/DD/YYYY"
-            );
+            return moment(data.CreatedOn).format("MM/DD/YYYY");
           }
         },
       },
@@ -2122,14 +2163,18 @@ class SalesLeadNavigation extends Component {
                 this.state.Steps[
                   this.state.Steps.findIndex((x) => x.classname === "active")
                 ]["stepId"] === "saleslead" ? (
-              <div className="filter-wrap">
-                <div
-                  className="filter-top-right"
-                  onMouseLeave={() => this.setState({ IsDropDownShow: false })}
-                  onMouseOver={() => this.setState({ IsDropDownShow: true })}
-                >
-                  <Button className="cm-toggle" color="rose">
-                  Search SalesLead Status <ExpandMoreIcon />
+                  <div className="filter-wrap">
+                    <div
+                      className="filter-top-right"
+                      onMouseLeave={() =>
+                        this.setState({ IsDropDownShow: false })
+                      }
+                      onMouseOver={() =>
+                        this.setState({ IsDropDownShow: true })
+                      }
+                    >
+                      <Button className="cm-toggle" color="rose">
+                        Search SalesLead Status <ExpandMoreIcon />
                       </Button>
                       {this.state.IsDropDownShow === true ? (
                         <div className="cm-dropdown">
@@ -2163,19 +2208,19 @@ class SalesLeadNavigation extends Component {
                             >
                               Search
                             </Button>
-                      </div>
+                          </div>
+                        </div>
+                      ) : null}
                     </div>
-                  ) : null}
-                </div>
+                  </div>
+                ) : null
+              ) : null}
+
+              <div className="buttonW">
+                <Button color="primary" onClick={() => this.handleAdd()}>
+                  Add Sales Lead
+                </Button>
               </div>
-                     ) : null
-                     ) : null}        
-                       
-                                <div className="buttonW">
-                            <Button color="primary" onClick = {() => this.handleAdd()}>Add Sales Lead</Button>
-                            </div>
-                           
-                        
             </CardHeader>
             <CardBody>
               <div className="shipment-nav">
@@ -2241,6 +2286,13 @@ class SalesLeadNavigation extends Component {
                         </div>
                         <div className="shipment-submit">
                           <div className="right">
+                            <Button
+                              justIcon
+                              color="danger"
+                              onClick={(evt) => this.handelExportToExcel(evt)}
+                            >
+                              <i class="fas fa-download"></i>
+                            </Button>
                             <Button
                               color="rose"
                               onClick={(event) => this.search(event)}

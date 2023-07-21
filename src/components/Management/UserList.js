@@ -167,7 +167,38 @@ class UserLists extends Component {
         accessor: "ManagedByName",
         width: 100,
       },
-      
+      {
+        Header: "Status",
+        width: 100,
+        sortable: true,
+        filterable: true,
+        accessor: "Status",
+
+        // Cell: (record) => {
+        //   if (record.original.Status === "Active") {
+        //     return (
+        //       <Button
+        //         color="success"
+        //         className="table-btn"
+        //         onClick={() => this.activeInactiveUser(record)}
+        //       >
+        //         Active
+        //       </Button>
+        //     );
+        //   } else {
+        //     return (
+        //       <Button
+        //         color="danger"
+        //         className="table-btn"
+        //         onClick={() => this.activeInactiveUser(record)}
+        //       >
+        //         Inactive
+        //       </Button>
+        //     );
+        //   }
+        // },
+      },
+
       {
         Header: "Actions",
         accessor: "actions",
@@ -187,35 +218,6 @@ class UserLists extends Component {
             </div>
           );
         },
-      },
-      {
-        Header: "Status",
-        width: 100,
-        Cell: (record) => {
-          if (record.original.Status === "Active") {
-            return (
-              <Button
-                color="success"
-                className="table-btn"
-                onClick={() => this.activeInactiveUser(record)}
-              >
-                Active
-              </Button>
-            );
-          } else {
-            return (
-              <Button
-                color="danger"
-                className="table-btn"
-                onClick={() => this.activeInactiveUser(record)}
-              >
-                Inactive
-              </Button>
-            );
-          }
-        },
-        sortable: false,
-        filterable: false,
       },
     ];
 

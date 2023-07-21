@@ -85,7 +85,7 @@ class AllAccountReports extends Component {
 
       //Account Receivable
       UserName: "",
-      TrackingNumber:"",
+      TrackingNumber: "",
       currentLogin: {},
       checkUserName: false,
       FromDateReceivable: "",
@@ -295,15 +295,15 @@ class AllAccountReports extends Component {
           FromDate: CommonConfig.isEmpty(this.state.FromDate)
             ? ""
             : moment(this.state.FromDate)
-              .startOf("day")
-              .format(CommonConfig.dateFormat.dbDateTime)
-              .toString(),
+                .startOf("day")
+                .format(CommonConfig.dateFormat.dbDateTime)
+                .toString(),
           ToDate: CommonConfig.isEmpty(this.state.ToDate)
             ? ""
             : moment(this.state.ToDate)
-              .endOf("day")
-              .format(CommonConfig.dateFormat.dbDateTime)
-              .toString(),
+                .endOf("day")
+                .format(CommonConfig.dateFormat.dbDateTime)
+                .toString(),
           PaidStatus: CommonConfig.isEmpty(this.state.PaidStatus)
             ? ""
             : this.state.PaidStatus,
@@ -367,7 +367,7 @@ class AllAccountReports extends Component {
       CommonRadio: "",
       commonConfirmationNumber: "",
       PayableList: [],
-      VendorPayableList:[],
+      VendorPayableList: [],
       VendorNameList: [],
       searchClicked: false,
     });
@@ -440,15 +440,15 @@ class AllAccountReports extends Component {
         FromDate: CommonConfig.isEmpty(this.state.FromDate)
           ? ""
           : moment(this.state.FromDate)
-            .startOf("day")
-            .format(CommonConfig.dateFormat.dbDateTime)
-            .toString(),
+              .startOf("day")
+              .format(CommonConfig.dateFormat.dbDateTime)
+              .toString(),
         ToDate: CommonConfig.isEmpty(this.state.ToDate)
           ? ""
           : moment(this.state.ToDate)
-            .endOf("day")
-            .format(CommonConfig.dateFormat.dbDateTime)
-            .toString(),
+              .endOf("day")
+              .format(CommonConfig.dateFormat.dbDateTime)
+              .toString(),
         PaidStatus: CommonConfig.isEmpty(this.state.PaidStatus)
           ? ""
           : this.state.PaidStatus,
@@ -467,7 +467,6 @@ class AllAccountReports extends Component {
         api
           .post("reports/getAccountPayableReport", data)
           .then((res) => {
-           
             this.hideLoader();
 
             if (res.success) {
@@ -481,13 +480,13 @@ class AllAccountReports extends Component {
                 (x) => x.Index === idx
               );
 
-          this.setState({
-            PayableList: res.data.AccountData.filter(
+              this.setState({
+                PayableList: res.data.AccountData.filter(
                   (x) =>
                     x.VendorName.toLowerCase() ===
                     vendordata[0].VendorName.toLowerCase()
-            ),
-          });
+                ),
+              });
               vendorList.map((x) => {
                 if (x.expand === false) {
                   x.expand = true;
@@ -497,18 +496,18 @@ class AllAccountReports extends Component {
               this.setState({
                 VendorNameList: vendorList,
               });
-        } else {
-          cogoToast.error("Something went wrong");
-        }
-      })
-      .catch((err) => {
-        cogoToast.error("Something went wrong");
-        this.hideLoader();
-      });
-     }else{
+            } else {
+              cogoToast.error("Something went wrong");
+            }
+          })
+          .catch((err) => {
+            cogoToast.error("Something went wrong");
+            this.hideLoader();
+          });
+      } else {
         vendorList[index]["expand"] = !vendorList[index]["expand"];
         this.setState({ VendorNameList: vendorList, PayableList: [] });
-     }
+      }
     } catch (e) {
       console.log("error..", e);
     }
@@ -719,10 +718,12 @@ class AllAccountReports extends Component {
         yn.Description === "Yes"
           ? 1
           : yn.Description === "No"
-            ? 0
-            : yn.Description === "Ready for Yes"
-              ? 3
-              : "Not Ready";
+          ? 0
+          : yn.Description === "Ready for Yes"
+          ? 3
+          : yn.Description === "Collections"
+          ? 4
+          : "Not Ready";
       return (
         <MenuItem classes={{ root: classes.selectMenuItem }} value={val}>
           {" "}
@@ -1009,23 +1010,23 @@ class AllAccountReports extends Component {
           FromDate: CommonConfig.isEmpty(this.state.FromDateReceivable)
             ? ""
             : moment(this.state.FromDateReceivable)
-              .startOf("day")
-              .format(CommonConfig.dateFormat.dbDateTime)
-              .toString(),
+                .startOf("day")
+                .format(CommonConfig.dateFormat.dbDateTime)
+                .toString(),
           ToDate: CommonConfig.isEmpty(this.state.ToDateReceivable)
             ? ""
             : moment(this.state.ToDateReceivable)
-              .endOf("day")
-              .format(CommonConfig.dateFormat.dbDateTime)
-              .toString(),
+                .endOf("day")
+                .format(CommonConfig.dateFormat.dbDateTime)
+                .toString(),
           UserName: CommonConfig.isEmpty(this.state.UserName)
             ? ""
             : this.state.UserName,
           ManagedBy: this.state.checkUserName
             ? this.state.currentLogin.value
             : CommonConfig.isEmpty(this.state.ManagedBy)
-              ? ""
-              : this.state.ManagedBy.value,
+            ? ""
+            : this.state.ManagedBy.value,
           ShipmentType: CommonConfig.isEmpty(this.state.ShipmentType)
             ? ""
             : this.state.ShipmentType.value,
@@ -1041,12 +1042,12 @@ class AllAccountReports extends Component {
           IsClear: CommonConfig.isEmpty(this.state.receivableAllClear)
             ? ""
             : this.state.receivableAllClear,
-          TrackingNumber:CommonConfig.isEmpty(this.state.TrackingNumber)
+          TrackingNumber: CommonConfig.isEmpty(this.state.TrackingNumber)
             ? ""
             : this.state.TrackingNumber,
         };
         this.showLoader();
-        var testdata = []
+        var testdata = [];
         this.setState({ AccountReceivableReport: testdata });
         api
           .post("reports/getAccountReceivableReport", data)
@@ -1095,7 +1096,7 @@ class AllAccountReports extends Component {
       SubServiceName: "",
       StatusQuery: "",
       receivableAllClear: "",
-      TrackingNumber:"",
+      TrackingNumber: "",
       ShipmentStatus: [],
       ServiceNameList: [],
       receivableClicked: false,
@@ -1229,15 +1230,15 @@ class AllAccountReports extends Component {
           FromDate: CommonConfig.isEmpty(this.state.FromDateProfit)
             ? ""
             : moment(this.state.FromDateProfit)
-              .startOf("day")
-              .format(CommonConfig.dateFormat.dbDateTime)
-              .toString(),
+                .startOf("day")
+                .format(CommonConfig.dateFormat.dbDateTime)
+                .toString(),
           ToDate: CommonConfig.isEmpty(this.state.ToDateProfit)
             ? ""
             : moment(this.state.ToDateProfit)
-              .endOf("day")
-              .format(CommonConfig.dateFormat.dbDateTime)
-              .toString(),
+                .endOf("day")
+                .format(CommonConfig.dateFormat.dbDateTime)
+                .toString(),
           UserName: CommonConfig.isEmpty(this.state.UserNameProfit)
             ? ""
             : this.state.UserNameProfit,
@@ -1250,8 +1251,8 @@ class AllAccountReports extends Component {
           ManagedBy: this.state.checkUserNameProfit
             ? this.state.currentLogin.value
             : CommonConfig.isEmpty(this.state.ManagedByProfit)
-              ? ""
-              : this.state.ManagedByProfit.value,
+            ? ""
+            : this.state.ManagedByProfit.value,
           ShipmentType: CommonConfig.isEmpty(this.state.ShipmentTypeProfit)
             ? ""
             : this.state.ShipmentTypeProfit.value,
@@ -1270,7 +1271,7 @@ class AllAccountReports extends Component {
           TrackingNumber: this.state.TrackingNumber,
         };
         this.showLoader();
-        var testdata = []
+        var testdata = [];
         // this.setState({ AccountReceivableReport: testdata });
         this.setState({ ProfitReport: testdata });
         api
@@ -1399,15 +1400,15 @@ class AllAccountReports extends Component {
           FromDate: CommonConfig.isEmpty(this.state.FromDateReceived)
             ? ""
             : moment(this.state.FromDateReceived)
-              .startOf("day")
-              .format(CommonConfig.dateFormat.dbDateTime)
-              .toString(),
+                .startOf("day")
+                .format(CommonConfig.dateFormat.dbDateTime)
+                .toString(),
           ToDate: CommonConfig.isEmpty(this.state.ToDateReceived)
             ? ""
             : moment(this.state.ToDateReceived)
-              .endOf("day")
-              .format(CommonConfig.dateFormat.dbDateTime)
-              .toString(),
+                .endOf("day")
+                .format(CommonConfig.dateFormat.dbDateTime)
+                .toString(),
           PaymentType: CommonConfig.isEmpty(this.state.PaymentTypeReceived)
             ? ""
             : this.state.PaymentTypeReceived.value,
@@ -1709,10 +1710,10 @@ class AllAccountReports extends Component {
             {CommonConfig.isEmpty(this.state.TotalReceivedAmount)
               ? ""
               : "$ " +
-              parseFloat(this.state.TotalReceivedAmount)
-                .toFixed(2)
-                .toString()
-                .replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+                parseFloat(this.state.TotalReceivedAmount)
+                  .toFixed(2)
+                  .toString()
+                  .replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
           </span>
         ),
         sortMethod: (a, b) => {
@@ -1740,10 +1741,10 @@ class AllAccountReports extends Component {
             {CommonConfig.isEmpty(this.state.TotalIssuedAmount)
               ? ""
               : "$ " +
-              parseFloat(this.state.TotalIssuedAmount)
-                .toFixed(2)
-                .toString()
-                .replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+                parseFloat(this.state.TotalIssuedAmount)
+                  .toFixed(2)
+                  .toString()
+                  .replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
           </span>
         ),
         sortMethod: (a, b) => {
@@ -1771,10 +1772,10 @@ class AllAccountReports extends Component {
             {CommonConfig.isEmpty(this.state.finalAmountProfit)
               ? ""
               : "$ " +
-              parseFloat(this.state.finalAmountProfit)
-                .toFixed(2)
-                .toString()
-                .replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+                parseFloat(this.state.finalAmountProfit)
+                  .toFixed(2)
+                  .toString()
+                  .replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
           </span>
         ),
         sortMethod: (a, b) => {
@@ -2367,17 +2368,18 @@ class AllAccountReports extends Component {
                         </div>
                       </GridItem>
                       <GridItem xs={12} sm={12} md={3}>
-                                <CustomInput
-                                labelText="Tracking Number"
-                                formControlProps={{
-                                    fullWidth: true,
-                                }}
-                                inputProps={{
-                                    onChange: (event) => this.handleChange(event,"TrackingNumber"),
-                                    value: TrackingNumber
-                                }}
-                                />
-                            </GridItem>
+                        <CustomInput
+                          labelText="Tracking Number"
+                          formControlProps={{
+                            fullWidth: true,
+                          }}
+                          inputProps={{
+                            onChange: (event) =>
+                              this.handleChange(event, "TrackingNumber"),
+                            value: TrackingNumber,
+                          }}
+                        />
+                      </GridItem>
                     </GridContainer>
 
                     <div className="shipment-submit  mt-20">
@@ -2657,17 +2659,18 @@ class AllAccountReports extends Component {
                       </div>
                     </GridItem>
                     <GridItem xs={12} sm={12} md={3}>
-                                <CustomInput
-                                labelText="Tracking Number"
-                                formControlProps={{
-                                    fullWidth: true,
-                                }}
-                                inputProps={{
-                                    onChange: (event) => this.handleChange(event,"TrackingNumber"),
-                                    value: TrackingNumber
-                                }}
-                                />
-                            </GridItem>
+                      <CustomInput
+                        labelText="Tracking Number"
+                        formControlProps={{
+                          fullWidth: true,
+                        }}
+                        inputProps={{
+                          onChange: (event) =>
+                            this.handleChange(event, "TrackingNumber"),
+                          value: TrackingNumber,
+                        }}
+                      />
+                    </GridItem>
                   </GridContainer>
                   <div className="shipment-submit  mt-20">
                     <div className="right">

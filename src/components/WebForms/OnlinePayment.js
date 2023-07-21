@@ -14,6 +14,7 @@ import CardIcon from "components/Card/CardIcon.js";
 import CardHeader from "components/Card/CardHeader.js";
 import api from "../../utils/apiClient";
 import moment from "moment";
+import momentTimezone from "moment-timezone";
 import { CommonConfig } from "../../utils/constant";
 import cogoToast from "cogo-toast";
 import Autocomplete from "@material-ui/lab/Autocomplete";
@@ -113,6 +114,7 @@ class OnlinePayment extends Component {
         api
           .post("payment/getPaymentList", data)
           .then((result) => {
+            console.log("list...", result);
             if (result.success) {
               this.hideLoador();
               if (this.state.AllAccess === 1) {
@@ -349,9 +351,9 @@ class OnlinePayment extends Component {
         },
         Header: "Created On",
         accessor: (data) => {
-          return moment(data.CreatedOn).format(
-            CommonConfig.dateFormat.dateOnly
-          );
+          return momentTimezone(data.CreatedOn)
+            .tz(CommonConfig.UStimezone)
+            .format(CommonConfig.dateFormat.dateOnly);
         },
         width: 120,
         maxWidth: 120,

@@ -12,6 +12,7 @@ import Note from "@material-ui/icons/Assessment";
 import Package from "@material-ui/icons/Markunread";
 import Badge from "@material-ui/core/Badge";
 import moment from "moment";
+import momentTimezone from "moment-timezone";
 import AssignmentIcon from "@material-ui/icons/Assignment";
 import { CommonConfig } from "../../utils/constant";
 // core components
@@ -84,10 +85,32 @@ class EditSalesLeads extends Component {
   constructor(props) {
     super(props);
     this.state = {
+      CarmakeErrText: "",
+      CarmodelErrText: "",
+      CaryearErrText: "",
+
+      TvmakeErrText: "",
+      TvmodelErrText: "",
+      TvAweightErrText: "",
+
+      newpackagetype: [],
+
+      packagetypeErr: false,
+      packagetypeErrText: "",
+
+      AWeightErr: false,
+      AWeightErrText: "",
+      AquantityErr: false,
+      AquantityErrText: "",
+
+      pickupcityzipHelperText: "",
+      ProposalTypeErr: false,
       ProposalTypeError: "",
       Referrederror: "",
+      Referrederr: false,
       Followuprror: "",
-      PackageListError:"",
+      Followuprr: false,
+      PackageListError: "",
 
       EditProposalData: [],
       SalesLeadManagementID: "",
@@ -152,8 +175,10 @@ class EditSalesLeads extends Component {
       dropoffstateHelperText: "",
       dropoffstateCheck: false,
 
-      LeadDate: moment().toDate(),
-
+      // LeadDate: moment().toDate(),
+      LeadDate: momentTimezone()
+        .tz(CommonConfig.UStimezone)
+        .toDate(),
       FollowupDate: "",
       followupdateErr: false,
       followupdateHelperText: "",
@@ -255,8 +280,10 @@ class EditSalesLeads extends Component {
       // ],
 
       referredby: [],
-      TentativeDate: moment().toDate(),
-      StartDate: moment().toDate(),
+      TentativeDate: "",
+      StartDate: "",
+      // TentativeDate: moment().toDate(),
+      // StartDate: moment().toDate(),
       open: false,
       close: false,
       fromStateAutoComplete: false,
@@ -368,7 +395,17 @@ class EditSalesLeads extends Component {
       this.setState({
         fromStateList: res.data,
         fromStateAutoComplete: res.data.length ? true : false,
+        pickupcountryHelperText: "",
       });
+      res.data.length
+        ? this.setState({
+            pickupcityzipHelperText: "please enter zipcode",
+            pickupcityHelperText: "",
+          })
+        : this.setState({
+            pickupcityHelperText: "please enter city",
+            pickupcityzipHelperText: "",
+          });
     }
   };
 
@@ -386,14 +423,22 @@ class EditSalesLeads extends Component {
       this.setState({
         toStateList: res.data,
         toStateAutoComplete: res.data.length ? true : false,
+        dropoffcountryHelperText: "",
       });
+      res.data.length
+        ? this.setState({
+            DropoffCityZipHelperText: "please enter zipcode",
+            dropoffcityHelperText: "",
+          })
+        : this.setState({
+            dropoffcityHelperText: "please enter city",
+            DropoffCityZipHelperText: "",
+          });
     }
   };
 
   getReferredSite = () => {
     api.get("contactus/spGetSalesLeadReff", {}).then((res) => {
-      console.log("getCheckRessData", res.data);
-
       var getSiteData = res.data.map((item) => ({
         id: item.SalesLeadReffID,
         label: item.Refference,
@@ -413,7 +458,37 @@ class EditSalesLeads extends Component {
     } else if (type === "proposaltype") {
       this.setState({ ProposalType: value.props.value });
     } else if (type === "proposalstatus") {
-      this.setState({ ProposalStatus: value });
+      debugger;
+      this.setState({
+        ProposalStatus: value,
+        proposalstatusHelperText: "",
+        proposalstatusErr: false,
+      });
+      if (value !== "New") {
+        this.setState({
+          Referrederror: "Please select any one",
+          Referrederr: true,
+          ProposalTypeError: "Please select any one",
+          ProposalTypeErr: true,
+          Followuprror: "Please select date",
+          Followuprr: true,
+        });
+        document.getElementById("referrederror").style.display = "block";
+        document.getElementById("followuprror").style.display = "block";
+        document.getElementById("proposalTypeerror").style.display = "block";
+      } else {
+        this.setState({
+          Referrederror: "",
+          Referrederr: false,
+          ProposalTypeError: "",
+          ProposalTypeErr: false,
+          Followuprror: "",
+          Followuprr: false,
+        });
+        document.getElementById("referrederror").style.display = "none";
+        document.getElementById("followuprror").style.display = "none";
+        document.getElementById("proposalTypeerror").style.display = "none";
+      }
     } else if (type === "deliverytype") {
       this.setState({ DeliveryType: value });
     } else if (type === "pickupcity") {
@@ -426,7 +501,6 @@ class EditSalesLeads extends Component {
       this.setState({ PickupState: value });
     } else if (type === "referredby") {
       this.setState({ ReferredBy: value.props.value });
-      console.log("checkreffredbyydata", value.props.value);
     }
   }
 
@@ -448,7 +522,8 @@ class EditSalesLeads extends Component {
       }
     } else if (type === "contactname") {
       this.setState({ contactnameCheck: true });
-      let contactnameVal = event.target.value;
+      let contactnameValold = event.target.value;
+      let contactnameVal = contactnameValold;
       if (CommonConfig.isEmpty(contactnameVal)) {
         this.setState({
           ContactName: contactnameVal,
@@ -659,7 +734,6 @@ class EditSalesLeads extends Component {
       }
     } else if (type === "referredby") {
       let referredbyVal = event.target.value;
-      console.log("checkmandetvalue", referredbyVal);
       if (CommonConfig.isEmpty(referredbyVal)) {
         this.setState({
           ReferredBy: referredbyVal,
@@ -919,6 +993,7 @@ class EditSalesLeads extends Component {
           this.setState({
             IsPackageVisible: true,
           });
+          this.state.newpackagetype.push("Package");
         }
         if (tvList.length > 0) {
           var j = 1;
@@ -930,6 +1005,7 @@ class EditSalesLeads extends Component {
           this.setState({
             IsTvVisible: true,
           });
+          this.state.newpackagetype.push("TV");
         }
         if (carList.length > 0) {
           var j = 1;
@@ -941,6 +1017,7 @@ class EditSalesLeads extends Component {
           this.setState({
             IsCarVisible: true,
           });
+          this.state.newpackagetype.push("Car");
         }
         var PckgList = packList;
         for (var i = 0; i < PckgList.length; i++) {
@@ -983,8 +1060,11 @@ class EditSalesLeads extends Component {
             return Obj;
           });
           this.setState({ notes: this.state.NoteList, notesDisabled: true });
+          console.log("1111", this.state.NoteList);
           this.handleAddNotesRow();
         } else {
+          console.log("22222");
+          this.setState({ NoteList: [] });
           this.handleAddNotesRow();
         }
         this.hideLoader();
@@ -1792,20 +1872,60 @@ class EditSalesLeads extends Component {
   };
 
   handleChangePackage = (idx) => (event) => {
+    debugger;
     const { name, value } = event.target;
     const PackageList = [...this.state.PackageList];
     let index = PackageList.findIndex((x) => x.Index === idx);
     PackageList[index][name] = value.replace(/\D/, "");
     this.setState({ PackageList: PackageList });
+
+    if (
+      this.state.PackageList[0].Quantity !== "" ||
+      this.state.PackageList[0].Quantity !== "0" ||
+      this.state.PackageList[0].Quantity !== 0
+    ) {
+      this.setState({
+        AquantityErr: false,
+        AquantityErrText: "",
+      });
+    }
+    if (
+      this.state.PackageList[0].ActualWeight !== "" ||
+      this.state.PackageList[0].ActualWeight !== "0" ||
+      this.state.PackageList[0].ActualWeight !== 0
+    ) {
+      this.setState({
+        AWeightErr: false,
+        AWeightErrText: "",
+      });
+    }
+
     this.Calculate();
   };
 
   handleCarChange = (idx) => (event) => {
+    debugger;
     const { name, value } = event.target;
+
     const CarList = [...this.state.CarList];
     let index = CarList.findIndex((x) => x.Index === idx);
     CarList[index][name] = value;
     this.setState({ CarList: CarList });
+    if (this.state.CarList[0].CarMake !== "") {
+      this.setState({ CarmakeErrText: "" });
+    }
+    if (this.state.CarList[0].CarModel !== "") {
+      this.setState({ CarmodelErrText: "" });
+    }
+    if (this.state.CarList[0].CarYear !== "") {
+      this.setState({ CaryearErrText: "" });
+    }
+    if (name === "CarYear") {
+      let Phone1 = event.target.value.replace(/\D/g, "");
+      if (Phone1.length <= 4) {
+        this.state.CarList[0].CarYear = Phone1;
+      }
+    }
   };
 
   handleTVChange = (idx) => (event) => {
@@ -1814,9 +1934,19 @@ class EditSalesLeads extends Component {
     let index = TVList.findIndex((x) => x.Index === idx);
     TVList[index][name] = value;
     this.setState({ TVList: TVList });
+    if (this.state.TVList[0].TVMake !== "") {
+      this.setState({ TvmakeErrText: "" });
+    }
+    if (this.state.TVList[0].TVModel !== "") {
+      this.setState({ TvmodelErrText: "" });
+    }
+    if (this.state.TVList[0].ActualWeight !== 0) {
+      this.setState({ TvAweightErrText: "" });
+    }
   };
 
   handleChangePackagecontent = (idx) => (event) => {
+    debugger;
     const { value } = event.target;
     const PackageList = [...this.state.PackageList];
     let index = PackageList.findIndex((x) => x.Index === idx);
@@ -1852,17 +1982,20 @@ class EditSalesLeads extends Component {
         this.setState({
           IsPackageVisible: false,
         });
+        this.state.newpackagetype.pop("Package");
       }
       this.setState({ PackageList: packageRemove });
     }
   };
 
   removeCarRow = (Index) => () => {
+    debugger;
     const packageRemove = [...this.state.CarList];
     var packageIndex = this.state.CarList.findIndex((x) => x.Index === Index);
     if (packageIndex !== -1) {
       packageRemove[packageIndex]["Status"] = "Inactive";
       if (packageRemove.filter((x) => x.Status === "Active").length === 0) {
+        this.state.newpackagetype.pop("Car");
         this.setState({
           IsCarVisible: false,
         });
@@ -1880,6 +2013,7 @@ class EditSalesLeads extends Component {
         this.setState({
           IsTvVisible: false,
         });
+        this.state.newpackagetype.push("TV");
       }
       this.setState({ TVList: packageRemove });
     }
@@ -1972,9 +2106,15 @@ class EditSalesLeads extends Component {
                 onChange={this.handleChangePackage(packages.Index)}
                 disabled={packages.PackageType === 2 ? true : false}
               />
+              <span
+                id="AquanitityErr"
+                style={{ color: "red", fontSize: "12px" }}
+              >
+                {this.state.AquantityErrText}
+              </span>
             </td>
             <td>
-              <div className="table-select">
+              <div className="table-select  wd-full">
                 <FormControl className={classes.formControl} fullWidth>
                   <Select
                     id="package_number"
@@ -1982,10 +2122,22 @@ class EditSalesLeads extends Component {
                     className="form-control"
                     value={packages.PackageType}
                     onChange={this.handleChangePackagecontent(packages.Index)}
+                    onFocus={() =>
+                      this.setState({
+                        packagetypeErr: false,
+                        packagetypeErrText: "",
+                      })
+                    }
                   >
                     {this.Packagecontent()}
                   </Select>
                 </FormControl>
+                <span
+                  id="packagetypeerr"
+                  style={{ color: "red", fontSize: "12px" }}
+                >
+                  {this.state.packagetypeErrText}
+                </span>
               </div>
             </td>
 
@@ -1997,6 +2149,9 @@ class EditSalesLeads extends Component {
                 onChange={this.handleChangePackage(packages.Index)}
                 disabled={packages.PackageType === 2 ? true : false}
               />
+              <span id="AweightErr" style={{ color: "red", fontSize: "12px" }}>
+                {this.state.AWeightErrText}
+              </span>
             </td>
             <td>
               <input
@@ -2088,30 +2243,43 @@ class EditSalesLeads extends Component {
                 onChange={this.handleCarChange(packages.Index)}
               />
             </td>
-            <td>
+            <td colSpan={2}>
               <input
                 type={Text}
                 name="CarMake"
                 value={packages.CarMake}
                 onChange={this.handleCarChange(packages.Index)}
               />
+              <span id="carmakeErr" style={{ color: "red", fontSize: "12px" }}>
+                {this.state.CarmakeErrText}
+              </span>
             </td>
-            <td>
+            <td colSpan={3}>
               <input
                 type={Text}
                 name="CarModel"
                 value={packages.CarModel}
                 onChange={this.handleCarChange(packages.Index)}
               />
+
+              <span id="carmodelErr" style={{ color: "red", fontSize: "12px" }}>
+                {this.state.CarmodelErrText}
+              </span>
             </td>
-            <td>
+
+            <td colSpan={2}>
               <input
-                type={Text}
+                type={Number}
                 name="CarYear"
+                max={4}
                 value={packages.CarYear}
                 onChange={this.handleCarChange(packages.Index)}
               />
+              <span id="caryearErr" style={{ color: "red", fontSize: "12px" }}>
+                {this.state.CaryearErrText}
+              </span>
             </td>
+
             <td>
               <div className="pck-subbtn">
                 {/* {idx !== 0 ? ( */}
@@ -2156,6 +2324,9 @@ class EditSalesLeads extends Component {
                 value={packages.TVMake}
                 onChange={this.handleTVChange(packages.Index)}
               />
+              <span id="tvmakeErr" style={{ color: "red", fontSize: "12px" }}>
+                {this.state.TvmakeErrText}
+              </span>
             </td>
             <td>
               <input
@@ -2164,6 +2335,9 @@ class EditSalesLeads extends Component {
                 value={packages.TVModel}
                 onChange={this.handleTVChange(packages.Index)}
               />
+              <span id="tvmodelErr" style={{ color: "red", fontSize: "12px" }}>
+                {this.state.TvmodelErrText}
+              </span>
             </td>
 
             <td>
@@ -2173,6 +2347,12 @@ class EditSalesLeads extends Component {
                 value={packages.ActualWeight}
                 onChange={this.handleTVChange(packages.Index)}
               />
+              <span
+                id="tvAweightErr"
+                style={{ color: "red", fontSize: "12px" }}
+              >
+                {this.state.TvAweightErrText}
+              </span>
             </td>
             <td>
               <input
@@ -2249,6 +2429,7 @@ class EditSalesLeads extends Component {
   };
 
   handleAddNotesRow = () => {
+    debugger;
     var addnotes = this.state.notes.filter(
       (x) => x.Status === "Active" && (x.NoteText === null || x.NoteText === "")
     );
@@ -2276,7 +2457,7 @@ class EditSalesLeads extends Component {
         notes: [...this.state.notes, note],
       });
     } else {
-      cogoToast.error("Please fill above note first");
+      // cogoToast.error("Please fill above note first");
     }
   };
 
@@ -2349,7 +2530,9 @@ class EditSalesLeads extends Component {
         return (
           <tr>
             <td style={{ width: "154px" }}>
-              {moment(notes.CreatedOn).format(CommonConfig.dateFormat.dateTime)}
+              {momentTimezone(notes.CreatedOn)
+                .tz(CommonConfig.UStimezone)
+                .format(CommonConfig.dateFormat.dateTime)}
             </td>
             <td>
               {notes.disabled ? (
@@ -2479,7 +2662,7 @@ class EditSalesLeads extends Component {
       IsFormValid = false;
       this.setState({
         emailaddressErr: true,
-        emailaddressHelperText: "Please Enter emailaddress",
+        emailaddressHelperText: "Please Enter EmailAddress",
       });
     }
 
@@ -2493,7 +2676,7 @@ class EditSalesLeads extends Component {
       if (CommonConfig.isEmpty(val)) {
         this.setState({
           fullnameErr: true,
-          fullnameHelperText: "Please enter Full Name",
+          fullnameHelperText: "Please Enter Full Name",
         });
       }
     }
@@ -2509,39 +2692,505 @@ class EditSalesLeads extends Component {
   };
 
   handleSave = (redirect) => {
-    if (!this.state.ReferredBy) {
+    if (!this.state.ContactName) {
+      document.getElementById("cname").style.display = "block";
+      this.setState({
+        contactnameHelperText: "Please Enter Contact Name",
+        // pickupcityErr: true,
+      });
+    }
+    if (!this.state.EmailAddress) {
+      document.getElementById("cemail").style.display = "block";
+      this.setState({
+        emailaddressHelperText: "Please Enter Email Address",
+        // pickupcityErr: true,
+      });
+    }
+    if (!this.state.Phone) {
+      document.getElementById("cphone").style.display = "block";
+      this.setState({
+        phoneHelperText: "Please Enter Phone Number",
+        // pickupcityErr: true,
+      });
+    }
+    if (!this.state.selectedPickUPCountry.value) {
+      document.getElementById("pickupcountry").style.display = "block";
+      this.setState({
+        pickupcountryHelperText: "Please Select Pickup Country",
+        // pickupcityErr: true,
+      });
+    }
+
+    if (!this.state.selectedDropoffCountry.value) {
+      document.getElementById("dropoffcountry").style.display = "block";
+      this.setState({
+        dropoffcountryHelperText: "Please Select Dropoff Country",
+        // pickupcityErr: true,
+      });
+    }
+
+    if (!this.state.ProposalStatus) {
+      this.setState({
+        proposalstatusErr: true,
+        proposalstatusHelperText: "Please Enter Proposal Status",
+      });
+    }
+    console.log("new....", this.state.newpackagetype);
+    debugger;
+
+    if (
+      // (this.state.PackageList.length > 0 ||
+      //   this.state.TVList.length > 0 ||
+      //   this.state.CarList.length > 0) &&
+      this.state.newpackagetype.length > 0 ||
+      this.state.newpackagetype.length != 0
+    ) {
+      document.getElementById("PackageType").style.display = "none";
+    } else {
+      document.getElementById("PackageType").style.display = "block";
+      // this.handleError();
+      this.setState({ PackageListError: "Please select Package Type" });
+    }
+    if (
+      !this.state.ReferredBy &&
+      !this.state.ProposalType &&
+      !this.state.StartDate &&
+      (this.state.ProposalStatus === "Open" ||
+        this.state.ProposalStatus === "Cancelled" ||
+        this.state.ProposalStatus === "Closed" ||
+        this.state.ProposalStatus === "To be Deleted")
+      // this.state.ProposalStatus !== ""
+    ) {
       document.getElementById("referrederror").style.display = "block";
-      this.handleError();
+      document.getElementById("proposalTypeerror").style.display = "block";
+      document.getElementById("followuprror").style.display = "block";
+      this.setState({
+        Referrederror: "Please select any one",
+        Referrederr: true,
+        ProposalTypeError: "Please select any one",
+        ProposalTypeErr: true,
+        Followuprror: "Please select date",
+        Followuprr: true,
+      });
+      cogoToast.error("Missing or Incorrect Data");
+      return;
+    }
+    // else {
+    //   document.getElementById("referrederror").style.display = "none";
+    // }
+    if (
+      !this.state.ReferredBy &&
+      !this.state.ProposalType &&
+      (this.state.ProposalStatus === "Open" ||
+        this.state.ProposalStatus === "Cancelled" ||
+        this.state.ProposalStatus === "Closed" ||
+        this.state.ProposalStatus === "To be Deleted")
+      // this.state.ProposalStatus !== ""
+    ) {
+      document.getElementById("referrederror").style.display = "block";
+      document.getElementById("proposalTypeerror").style.display = "block";
+      this.setState({
+        ProposalTypeError: "Please select any one",
+        ProposalTypeErr: true,
+        Referrederror: "Please select any one",
+        Referrederr: true,
+      });
+      cogoToast.error("Missing or Incorrect Data");
+      return;
+    }
+    // else {
+    //   document.getElementById("referrederror").style.display = "none";
+    // }
+    if (
+      !this.state.ReferredBy &&
+      !this.state.StartDate &&
+      (this.state.ProposalStatus === "Open" ||
+        this.state.ProposalStatus === "Cancelled" ||
+        this.state.ProposalStatus === "Closed" ||
+        this.state.ProposalStatus === "To be Deleted")
+      // this.state.ProposalStatus !== ""
+    ) {
+      document.getElementById("referrederror").style.display = "block";
+      document.getElementById("followuprror").style.display = "block";
+      this.setState({
+        Referrederror: "Please select any one",
+        Referrederr: true,
+        Followuprror: "Please select date",
+        Followuprr: true,
+      });
+      cogoToast.error("Missing or Incorrect Data");
+      return;
+    }
+    // else {
+    //   document.getElementById("referrederror").style.display = "none";
+    // }
+    if (
+      !this.state.ProposalType &&
+      !this.state.StartDate &&
+      (this.state.ProposalStatus === "Open" ||
+        this.state.ProposalStatus === "Cancelled" ||
+        this.state.ProposalStatus === "Closed" ||
+        this.state.ProposalStatus === "To be Deleted")
+      // this.state.ProposalStatus !== ""
+    ) {
+      document.getElementById("proposalTypeerror").style.display = "block";
+      document.getElementById("followuprror").style.display = "block";
+      this.setState({
+        ProposalTypeError: "Please select any one",
+        ProposalTypeErr: true,
+        Followuprror: "Please select date",
+        Followuprr: true,
+      });
+      cogoToast.error("Missing or Incorrect Data");
+      return;
+    }
+    // else {
+    //   document.getElementById("proposalTypeerror").style.display = "none";
+    //   document.getElementById("followuprror").style.display = "none";
+    // }
+    if (
+      !this.state.ReferredBy &&
+      (this.state.ProposalStatus === "Open" ||
+        this.state.ProposalStatus === "Cancelled" ||
+        this.state.ProposalStatus === "Closed" ||
+        this.state.ProposalStatus === "To be Deleted")
+      // this.state.ProposalStatus !== ""
+    ) {
+      document.getElementById("referrederror").style.display = "block";
+      this.setState({
+        Referrederror: "Please select any one",
+        Referrederr: true,
+      });
+      cogoToast.error("Missing or Incorrect Data");
       return;
     } else {
       document.getElementById("referrederror").style.display = "none";
     }
-
-    if (!this.state.ProposalType) {
+    if (
+      !this.state.ProposalType &&
+      (this.state.ProposalStatus === "Open" ||
+        this.state.ProposalStatus === "Cancelled" ||
+        this.state.ProposalStatus === "Closed" ||
+        this.state.ProposalStatus === "To be Deleted")
+      // this.state.ProposalStatus !== ""
+    ) {
       document.getElementById("proposalTypeerror").style.display = "block";
-      this.handleError();
-      return;
+      this.setState({
+        ProposalTypeError: "Please select any one",
+        ProposalTypeErr: true,
+      });
     } else {
       document.getElementById("proposalTypeerror").style.display = "none";
     }
-
-    if (!this.state.StartDate) {
+    if (
+      !this.state.StartDate &&
+      (this.state.ProposalStatus === "Open" ||
+        this.state.ProposalStatus === "Cancelled" ||
+        this.state.ProposalStatus === "Closed" ||
+        this.state.ProposalStatus === "To be Deleted")
+    ) {
       document.getElementById("followuprror").style.display = "block";
-      this.handleError();
+      this.setState({ Followuprror: "Please select date", Followuprr: true });
+      //this.handleError();
+      cogoToast.error("Missing or Incorrect Data");
       return;
     } else {
       document.getElementById("followuprror").style.display = "none";
     }
 
+    // if (!this.state.ProposalType && this.state.ProposalStatus !== "") {
+    //   document.getElementById("proposalTypeerror").style.display = "block";
+    //   this.setState({
+    //     ProposalTypeError: "Please select any one",
+    //     ProposalTypeErr: true,
+    //   });
+    // } else {
+    //   document.getElementById("proposalTypeerror").style.display = "none";
+    // }
+
+    // if (!this.state.StartDate && this.state.ProposalStatus !== "New") {
+    //   document.getElementById("followuprror").style.display = "block";
+    //   this.setState({ Followuprror: "Please select date", Followuprr: true });
+    //   //this.handleError();
+    //   //  return;
+    // } else {
+    //   document.getElementById("followuprror").style.display = "none";
+    // }
+    if (
+      this.state.fromStateAutoComplete === true &&
+      (!this.state.PickupCityZip || this.state.PickupCityZip === "")
+    ) {
+      document.getElementById("pickupzip").style.display = "block";
+      this.setState({
+        pickupcityzipHelperText: "Please Enter Pickup Zipcode",
+        pickupcityErr: true,
+      });
+      cogoToast.error("Missing or Incorrect Data");
+      return;
+    }
+    if (
+      this.state.fromStateAutoComplete === false &&
+      (!this.state.PickupCity || this.state.PickupCity === "")
+    ) {
+      document.getElementById("pickupcity").style.display = "block";
+      this.setState({
+        pickupcityHelperText: "Please Enter Pickup City",
+        pickupcityErr: true,
+      });
+      cogoToast.error("Missing or Incorrect Data");
+      return;
+    }
+    if (
+      this.state.toStateAutoComplete === true &&
+      (!this.state.DropoffCityZip || this.state.DropoffCityZip === "")
+    ) {
+      document.getElementById("dropoffzip").style.display = "block";
+      this.setState({
+        DropoffCityZipHelperText: "Please Enter Dropoff Zipcode",
+        dropoffcityErr: true,
+      });
+      cogoToast.error("Missing or Incorrect Data");
+      return;
+    }
+    if (
+      this.state.toStateAutoComplete === false &&
+      (!this.state.DropoffCity || this.state.DropoffCity === "")
+    ) {
+      document.getElementById("dropoffcity").style.display = "block";
+      this.setState({
+        dropoffcityHelperText: "Please Enter Dropoff City",
+        dropoffcityErr: true,
+      });
+
+      cogoToast.error("Missing or Incorrect Data");
+      return;
+    }
     var FinalPackage = [...this.state.PackageList, ...this.state.CarList];
-    let PackageList = [...FinalPackage, ...this.state.TVList];
+    let updatedpackage = [...FinalPackage, ...this.state.TVList];
+    console.log("before", updatedpackage);
+    debugger;
+    let PackageList = updatedpackage.filter(
+      (item) =>
+        (item.Status === "Active" && item.SalesLeadPackageDetailID !== null) ||
+        (item.Status === "Inactive" &&
+          item.SalesLeadPackageDetailID !== null) ||
+        (item.Status === "Active" && item.SalesLeadPackageDetailID === null)
+    );
 
-    if(PackageList.length > 0){
+    console.log("after", PackageList);
+    if (PackageList.length > 0 && this.state.newpackagetype.length > 0) {
+      debugger;
+      for (let i = 0; i < PackageList.length; i++) {
+        if (
+          PackageList[i].PackageType === 5 &&
+          PackageList[i].Status === "Active"
+        ) {
+          if (
+            PackageList[i].CarMake === "" &&
+            PackageList[i].CarModel === "" &&
+            PackageList[i].CarYear === ""
+          ) {
+            document.getElementById("carmakeErr").style.display = "block";
+            document.getElementById("carmodelErr").style.display = "block";
+            document.getElementById("caryearErr").style.display = "block";
+            this.setState({
+              CarmakeErrText: "please enter brand name",
+              CarmodelErrText: "please enter car model",
+              CaryearErrText: "please enter car year",
+            });
+            return;
+          } else if (
+            PackageList[i].CarMake === "" &&
+            PackageList[i].CarModel === ""
+          ) {
+            document.getElementById("carmakeErr").style.display = "block";
+            document.getElementById("carmodelErr").style.display = "block";
+
+            this.setState({
+              CarmakeErrText: "please enter brand name",
+              CarmodelErrText: "please enter car model",
+            });
+            return;
+          } else if (
+            PackageList[i].CarMake === "" &&
+            PackageList[i].CarYear === ""
+          ) {
+            document.getElementById("carmakeErr").style.display = "block";
+            document.getElementById("caryearErr").style.display = "block";
+            this.setState({
+              CarmakeErrText: "please enter brand name",
+              CaryearErrText: "please enter car year",
+            });
+            return;
+          } else if (
+            PackageList[i].CarModel === "" &&
+            PackageList[i].CarYear === ""
+          ) {
+            document.getElementById("carmodelErr").style.display = "block";
+            document.getElementById("caryearErr").style.display = "block";
+            this.setState({
+              CarmodelErrText: "please enter car model",
+              CaryearErrText: "please enter car year",
+            });
+            return;
+          } else if (PackageList[i].CarMake === "") {
+            document.getElementById("carmakeErr").style.display = "block";
+            this.setState({
+              CarmakeErrText: "please enter brand name",
+            });
+            return;
+          } else if (PackageList[i].CarModel === "") {
+            document.getElementById("carmodelErr").style.display = "block";
+            this.setState({
+              CarmodelErrText: "please enter car model",
+            });
+            return;
+          } else if (PackageList[i].CarYear === "") {
+            document.getElementById("caryearErr").style.display = "block";
+            this.setState({
+              CaryearErrText: "please enter car year",
+            });
+            return;
+          } else {
+            document.getElementById("carmakeErr").style.display = "none";
+            document.getElementById("carmodelErr").style.display = "none";
+            document.getElementById("caryearErr").style.display = "none";
+          }
+        }
+        if (
+          PackageList[i].PackageType === 4 &&
+          PackageList[i].Status === "Active"
+        ) {
+          if (
+            PackageList[i].TVMake === "" &&
+            PackageList[i].TVModel === "" &&
+            PackageList[i].ActualWeight === 0
+          ) {
+            document.getElementById("tvmakeErr").style.display = "block";
+            document.getElementById("tvmodelErr").style.display = "block";
+            document.getElementById("tvAweightErr").style.display = "block";
+            this.setState({
+              TvmakeErrText: "please enter tv name",
+              TvmodelErrText: "please enter tv model",
+              TvAweightErrText: "please enter tv Lbs",
+            });
+            return;
+          } else if (
+            PackageList[i].TVMake === "" &&
+            PackageList[i].TVModel === ""
+          ) {
+            document.getElementById("tvmakeErr").style.display = "block";
+            document.getElementById("tvmodelErr").style.display = "block";
+
+            this.setState({
+              TvmakeErrText: "please enter tv name",
+              TvmodelErrText: "please enter tv model",
+            });
+            return;
+          } else if (
+            PackageList[i].TVMake === "" &&
+            PackageList[i].ActualWeight === 0
+          ) {
+            document.getElementById("tvmakeErr").style.display = "block";
+            document.getElementById("tvAweightErr").style.display = "block";
+            this.setState({
+              TvmakeErrText: "please enter tv name",
+              TvAweightErrText: "please enter tv Lbs",
+            });
+            return;
+          } else if (
+            PackageList[i].TVModel === "" &&
+            PackageList[i].ActualWeight === 0
+          ) {
+            document.getElementById("tvmodelErr").style.display = "block";
+            document.getElementById("tvAweightErr").style.display = "block";
+            this.setState({
+              TvmodelErrText: "please enter tv model",
+              TvAweightErrText: "please enter tv Lbs",
+            });
+            return;
+          } else if (PackageList[i].TVMake === "") {
+            document.getElementById("tvmakeErr").style.display = "block";
+            this.setState({
+              TvmakeErrText: "please enter tv name",
+            });
+            return;
+          } else if (PackageList[i].TVModel === "") {
+            document.getElementById("tvmodelErr").style.display = "block";
+            this.setState({
+              TvmodelErrText: "please enter tv model",
+            });
+            return;
+          } else if (PackageList[i].ActualWeight === "") {
+            document.getElementById("tvAweightErr").style.display = "block";
+            this.setState({
+              TvAweightErrText: "please enter tv Lbs",
+            });
+            return;
+          } else {
+            document.getElementById("tvmakeErr").style.display = "none";
+            document.getElementById("tvmodelErr").style.display = "none";
+            document.getElementById("tvAweightErr").style.display = "none";
+          }
+        }
+        if (
+          PackageList[i].PackageType === 0 &&
+          PackageList[i].Status === "Active"
+        ) {
+          this.setState({
+            packagetypeErr: true,
+            packagetypeErrText: "please select any one",
+          });
+          return;
+        }
+        if (
+          (PackageList[i].PackageType === 1 ||
+            PackageList[i].PackageType === 3) &&
+          PackageList[i].Status === "Active"
+        ) {
+          if (
+            (PackageList[i].Quantity === "0" ||
+              PackageList[i].Quantity === "" ||
+              PackageList[i].Quantity === 0) &&
+            (PackageList[i].ActualWeight === "" ||
+              PackageList[i].ActualWeight === "0" ||
+              PackageList[i].ActualWeight === 0)
+          ) {
+            this.setState({
+              AquantityErr: true,
+              AquantityErrText: "please enter quantity",
+              AWeightErr: true,
+              AWeightErrText: "please enter Lbs",
+            });
+            return;
+          } else if (
+            PackageList[i].ActualWeight === "" ||
+            PackageList[i].ActualWeight === "0" ||
+            PackageList[i].ActualWeight === 0
+          ) {
+            this.setState({
+              AWeightErr: true,
+              AWeightErrText: "please enter Lbs",
+            });
+            return;
+          } else if (
+            PackageList[i].Quantity === "0" ||
+            PackageList[i].Quantity === "" ||
+            PackageList[i].Quantity === 0
+          ) {
+            this.setState({
+              AquantityErr: true,
+              AquantityErrText: "please enter quantity",
+            });
+            return;
+          }
+        }
+      }
       document.getElementById("PackageType").style.display = "none";
-
-    }else{
+    } else {
       document.getElementById("PackageType").style.display = "block";
-      this.handleError();
+      // this.handleError();
+      this.setState({ PackageListError: "Please select Package Type" });
       return;
     }
 
@@ -2551,7 +3200,6 @@ class EditSalesLeads extends Component {
           (x) => x.NoteText !== "" && x.NoteText !== null
         );
 
-        
         if (
           !this.state.dropoffcountryErr ||
           !this.state.pickupcountryErr ||
@@ -2785,7 +3433,7 @@ class EditSalesLeads extends Component {
   };
 
   handleDateChange = (date) => {
-    this.setState({ StartDate: date });
+    this.setState({ StartDate: date, Followuprror: "", Followuprr: false });
   };
 
   handleLeadDateChange = (date) => {
@@ -2858,6 +3506,7 @@ class EditSalesLeads extends Component {
   };
 
   showDiv = (type, packageType) => {
+    debugger;
     this.setState({
       [type]: true,
     });
@@ -2865,18 +3514,21 @@ class EditSalesLeads extends Component {
       packageType === "Car" &&
       this.state.CarList.filter((x) => x.Status === "Active").length === 0
     ) {
+      this.state.newpackagetype.push("Car");
       this.addCarRow();
     }
     if (
       packageType === "TV" &&
       this.state.TVList.filter((x) => x.Status === "Active").length === 0
     ) {
+      this.state.newpackagetype.push("TV");
       this.addTVRow();
     }
     if (
       packageType === "Package" &&
       this.state.PackageList.filter((x) => x.Status === "Active").length === 0
     ) {
+      this.state.newpackagetype.push("Package");
       this.handleAddRow();
     }
     document.getElementById("PackageType").style.display = "none";
@@ -3106,8 +3758,8 @@ class EditSalesLeads extends Component {
                   <CustomInput
                     labelText="Contact Name"
                     id="contactname"
-                    error={this.state.contactnameErr}
-                    helperText={this.state.contactnameHelperText}
+                    //error={this.state.contactnameErr}
+                    // helperText={this.state.contactnameHelperText}
                     formControlProps={{ fullWidth: true }}
                     inputProps={{
                       value: ContactName,
@@ -3142,13 +3794,16 @@ class EditSalesLeads extends Component {
                         ),
                     }}
                   />
+                  <span id="cname" style={{ color: "red", fontSize: "12px" }}>
+                    {this.state.contactnameHelperText}
+                  </span>
                 </GridItem>
                 <GridItem xs={12} sm={12} md={3}>
                   <CustomInput
                     labelText={`Email Address`}
                     id="email "
-                    error={this.state.emailaddressErr}
-                    helperText={this.state.emailaddressHelperText}
+                    // error={this.state.emailaddressErr}
+                    // helperText={this.state.emailaddressHelperText}
                     formControlProps={{ fullWidth: true }}
                     inputProps={{
                       value: EmailAddress,
@@ -3183,13 +3838,16 @@ class EditSalesLeads extends Component {
                         ),
                     }}
                   />
+                  <span id="cemail" style={{ color: "red", fontSize: "12px" }}>
+                    {this.state.emailaddressHelperText}
+                  </span>
                 </GridItem>
                 <GridItem xs={12} sm={12} md={3}>
                   <CustomInput
                     labelText="Phone"
                     id="phone "
-                    error={this.state.phoneErr}
-                    helperText={this.state.phoneHelperText}
+                    // error={this.state.phoneErr}
+                    // helperText={this.state.phoneHelperText}
                     formControlProps={{ fullWidth: true }}
                     inputProps={{
                       value: Phone,
@@ -3222,6 +3880,9 @@ class EditSalesLeads extends Component {
                         ),
                     }}
                   />
+                  <span id="cphone" style={{ color: "red", fontSize: "12px" }}>
+                    {this.state.phoneHelperText}
+                  </span>
                 </GridItem>
                 <GridItem xs={12} sm={12} md={3}>
                   <Autocomplete
@@ -3259,21 +3920,27 @@ class EditSalesLeads extends Component {
                       renderInput={(params) => (
                         <TextField
                           {...params}
-                          error={this.state.pickupcountryErr}
-                          helperText={this.state.pickupcountryHelperText}
+                          // error={this.state.pickupcountryErr}
+                          // helperText={this.state.pickupcountryHelperText}
                           label="Pickup Country"
                           fullWidth
                         />
                       )}
                     />
+                    <span
+                      id="pickupcountry"
+                      style={{ color: "red", fontSize: "12px" }}
+                    >
+                      {this.state.pickupcountryHelperText}
+                    </span>
                   </FormControl>
                 </GridItem>
                 <GridItem xs={12} sm={12} md={3}>
                   <FormControl fullWidth>
                     <CustomInput
                       labelText="Pickupcity Zip"
-                      error={this.state.pickupcityzipErr}
-                      helperText={this.state.pickupcityzipHelperText}
+                      // error={this.state.pickupcityzipErr}
+                      // helperText={this.state.pickupcityzipHelperText}
                       id="pcityzip"
                       formControlProps={{ fullWidth: true }}
                       inputProps={{
@@ -3291,15 +3958,27 @@ class EditSalesLeads extends Component {
                           </InputAdornment>
                         ),
                       }}
+                      onFocus={() =>
+                        this.setState({
+                          pickupcityzipErr: false,
+                          pickupcityzipHelperText: "",
+                        })
+                      }
                     />
                   </FormControl>
+                  <span
+                    id="pickupzip"
+                    style={{ color: "red", fontSize: "12px" }}
+                  >
+                    {this.state.pickupcityzipHelperText}
+                  </span>
                 </GridItem>
                 <GridItem xs={12} sm={12} md={3}>
                   <FormControl fullWidth>
                     {this.state.PickupCityInput === true ? (
                       <CustomInput
-                        error={this.state.pickupcityErr}
-                        helperText={this.state.pickupcityHelperText}
+                        // error={this.state.pickupcityErr}
+                        // helperText={this.state.pickupcityHelperText}
                         labelText="Pickup City"
                         id="pcity"
                         formControlProps={{ fullWidth: true }}
@@ -3343,6 +4022,12 @@ class EditSalesLeads extends Component {
                       />
                     )}
                   </FormControl>
+                  <span
+                    id="pickupcity"
+                    style={{ color: "red", fontSize: "12px" }}
+                  >
+                    {this.state.pickupcityHelperText}
+                  </span>
                 </GridItem>
                 <GridItem xs={12} sm={12} md={3}>
                   {this.state.fromStateAutoComplete === false ? (
@@ -3399,20 +4084,26 @@ class EditSalesLeads extends Component {
                     renderInput={(params) => (
                       <TextField
                         {...params}
-                        error={this.state.dropoffcountryErr}
-                        helperText={this.state.dropoffcountryHelperText}
+                        // error={this.state.dropoffcountryErr}
+                        // helperText={this.state.dropoffcountryHelperText}
                         label="Dropoff Country"
                         fullWidth
                       />
                     )}
                   />
+                  <span
+                    id="dropoffcountry"
+                    style={{ color: "red", fontSize: "12px" }}
+                  >
+                    {this.state.dropoffcountryHelperText}
+                  </span>
                 </GridItem>
                 <GridItem xs={12} sm={12} md={3}>
                   <CustomInput
                     labelText="Dropoff Zip"
                     id="dcityzip"
-                    error={this.state.DropoffCityZipErr}
-                    helperText={this.state.DropoffCityZipHelperText}
+                    // error={this.state.DropoffCityZipErr}
+                    // helperText={this.state.DropoffCityZipHelperText}
                     formControlProps={{ fullWidth: true }}
                     inputProps={{
                       value: DropoffCityZip,
@@ -3431,12 +4122,18 @@ class EditSalesLeads extends Component {
                       ),
                     }}
                   />
+                  <span
+                    id="dropoffzipcode"
+                    style={{ color: "red", fontSize: "12px" }}
+                  >
+                    {this.state.DropoffCityZipHelperText}
+                  </span>
                 </GridItem>
                 <GridItem xs={12} sm={12} md={3}>
                   {this.state.DropoffCityInput === true ? (
                     <CustomInput
-                      error={this.state.dropoffcityErr}
-                      helperText={this.state.dropoffcityHelperText}
+                      // error={this.state.dropoffcityErr}
+                      // helperText={this.state.dropoffcityHelperText}
                       labelText="Dropoff City"
                       id="dcity"
                       formControlProps={{ fullWidth: true }}
@@ -3475,6 +4172,12 @@ class EditSalesLeads extends Component {
                       )}
                     />
                   )}
+                  <span
+                    id="dropoffcity"
+                    style={{ color: "red", fontSize: "12px" }}
+                  >
+                    {this.state.dropoffcityHelperText}
+                  </span>
                 </GridItem>
                 <GridItem xs={12} sm={12} md={3}>
                   {this.state.toStateAutoComplete === false ? (
@@ -3546,6 +4249,12 @@ class EditSalesLeads extends Component {
                         // id="package_number"
                         name="package_number"
                         value={ProposalType}
+                        onFocus={() =>
+                          this.setState({
+                            ProposalTypeErr: false,
+                            ProposalTypeError: "",
+                          })
+                        }
                         onChange={(event, value) =>
                           this.requestChange(event, value, "proposaltype")
                         }
@@ -3629,6 +4338,12 @@ class EditSalesLeads extends Component {
                         onChange={(event, value) =>
                           this.requestChange(event, value, "referredby")
                         }
+                        onFocus={() =>
+                          this.setState({
+                            Referrederr: false,
+                            Referrederror: "",
+                          })
+                        }
                       >
                         {this.ReferredbyOption()}
                       </Select>
@@ -3696,8 +4411,14 @@ class EditSalesLeads extends Component {
                         //dateFormat={"DD/MM/YYYY"}
                         value={moment(this.state.StartDate)}
                         timeFormat={false}
+                        // onFocus={() =>
+                        //   this.setState({
+                        //     Followuprr: false,
+                        //     Followuprror: "",
+                        //   })
+                        // }
                         selected={moment(this.state.StartDate)}
-                        inputProps={{ placeholder: "Followup Date" }}
+                        //inputProps={{ placeholder: "Followup Date" }}
                         onChange={this.handleDateChange}
                         isValidDate={valid}
                         closeOnSelect={true}
@@ -3764,7 +4485,7 @@ class EditSalesLeads extends Component {
               <h4 className="margin-right-auto text-color-black">
                 Package Details
               </h4>
-              
+
               <div style={{ textAlign: "right", marginTop: "12px" }}>
                 {this.state.CarList.filter((x) => x.Status === "Active")
                   .length === 0 ? (
@@ -3794,36 +4515,32 @@ class EditSalesLeads extends Component {
                   />
                 ) : null}
 
-                    <span
-                      id="PackageType" class = "PackageErr"
-                      style={{ color: "red", fontSize: "12px" }}
-                    >
-                      {this.state.PackageListError}
-                    </span>
+                <span
+                  id="PackageType"
+                  class="PackageErr"
+                  style={{ color: "red", fontSize: "12px" }}
+                >
+                  {this.state.PackageListError}
+                </span>
               </div>
-              
             </CardHeader>
             <CardBody>
               {IsPackageVisible ? (
                 <GridContainer>
                   <GridItem xs={12} sm={12} md={12}>
                     <div className="package-table no-scroll">
-                      <table>
+                      <table className="tablelayoutfix">
                         <thead>
                           <tr>
-                            <th style={{ width: "100px" }}>Quantity</th>
-                            <th style={{ width: "140px" }}>Package Type</th>
-                            <th style={{ width: "135px" }}>
-                              Actual Weight [Lbs.]
-                            </th>
-                            <th style={{ width: "406px" }} colspan="3">
+                            <th>Quantity</th>
+                            <th>Package Type</th>
+                            <th>Actual Weight [Lbs.]</th>
+                            <th colspan="3">
                               Package Dimension(L*W*H in Inches)
                             </th>
-                            <th style={{ width: "140px" }}>
-                              Chargeable Weight [Lbs.]
-                            </th>
-                            <th style={{ width: "137px" }}>CFT</th>
-                            <th style={{ width: "81px" }}>Action</th>
+                            <th>Chargeable Weight [Lbs.]</th>
+                            <th>CFT</th>
+                            <th>Action</th>
                           </tr>
                         </thead>
                         <tbody>{this.viewPackages()}</tbody>
@@ -3836,14 +4553,14 @@ class EditSalesLeads extends Component {
                 <GridContainer>
                   <GridItem xs={12} sm={12} md={12}>
                     <div className="package-table no-scroll">
-                      <table>
+                      <table className="tablelayoutfix">
                         <thead>
                           <tr>
-                            <th style={{ width: "100px" }}>Car Quantity</th>
-                            <th style={{ width: "275px" }}>Car Make</th>
-                            <th style={{ width: "406px" }}>Car Model</th>
-                            <th style={{ width: "277px" }}>Car Year</th>
-                            <th style={{ width: "81px" }}>Action</th>
+                            <th>Car Quantity</th>
+                            <th colSpan={2}>Car Make</th>
+                            <th colspan={3}>Car Model</th>
+                            <th colspan={2}>Car Year</th>
+                            <th>Action</th>
                           </tr>
                         </thead>
                         <tbody>{this.viewCarList()}</tbody>
@@ -3856,22 +4573,18 @@ class EditSalesLeads extends Component {
                 <GridContainer>
                   <GridItem xs={12} sm={12} md={12}>
                     <div className="package-table no-scroll">
-                      <table>
+                      <table className="tablelayoutfix">
                         <thead>
                           <tr>
-                            <th style={{ width: "100px" }}>TV Make</th>
-                            <th style={{ width: "140px" }}>TV Model</th>
-                            <th style={{ width: "135px" }}>
-                              Actual Weight [Lbs.]
-                            </th>
-                            <th style={{ width: "406px" }} colspan="3">
+                            <th>TV Make</th>
+                            <th>TV Model</th>
+                            <th>Actual Weight [Lbs.]</th>
+                            <th colspan="3">
                               Package Dimension(L*W*H in Inches)
                             </th>
-                            <th style={{ width: "140px" }}>
-                              Chargeable Weight [Lbs.]
-                            </th>
-                            <th style={{ width: "137px" }}>CFT</th>
-                            <th style={{ width: "81px" }}>Action</th>
+                            <th>Chargeable Weight [Lbs.]</th>
+                            <th>CFT</th>
+                            <th>Action</th>
                           </tr>
                         </thead>
                         <tbody>{this.viewTVList()}</tbody>

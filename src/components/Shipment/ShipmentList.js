@@ -591,6 +591,7 @@ class ShipmentList extends Component {
               ? ""
               : this.state.StatusQuery,
           };
+          debugger;
           this.showLoader();
           api
             .post("reports/getShipmentReport", data)

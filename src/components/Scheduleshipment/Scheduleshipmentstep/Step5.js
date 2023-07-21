@@ -72,6 +72,7 @@ class Scheduleshipment extends React.Component {
       getratedomain: parseFloat(localStorage.getItem("getRate")),
       Loading: false,
       saleslead: localStorage.getItem("sealsleadid"),
+      AccountNumber: "",
       salesleaddata: [],
       info_FromCity: "",
       info_FromState: "",
@@ -224,7 +225,9 @@ class Scheduleshipment extends React.Component {
     // });
     this.setState({
       GetRateAccess: CommonConfig.getUserAccess("Get Rates"),
+      AccountNumber: CommonConfig.loggedInUserData("AccountNumber"),
     });
+
     if (
       nextProps.props.location.state != undefined &&
       nextProps.props.location.state != null
@@ -853,10 +856,13 @@ class Scheduleshipment extends React.Component {
         });
       }
       if (this.state.selectTerm == false) {
-        cogoToast.error("Please agree the following terms");
+        cogoToast.error(
+          'Please review & select "I Agree to below Terms and Condition"'
+        );
         this.setState({
           selectTermErr: true,
-          selectTermHelperText: "Please agree the following terms",
+          selectTermHelperText:
+            'Please review & select "I Agree to below Terms and Condition"',
         });
         IsFormValid = false;
       }
@@ -916,13 +922,27 @@ class Scheduleshipment extends React.Component {
         });
       }
       if (this.state.selectTerm == false) {
-        cogoToast.error("Please agree the following terms");
+        cogoToast.error(
+          'Please review & select "I Agree to below Terms and Condition"'
+        );
         this.setState({
           selectTermErr: true,
-          selectTermHelperText: "Please agree the following terms",
+          selectTermHelperText:
+            'Please review & select "I Agree to below Terms and Condition"',
         });
         IsFormValid = false;
       }
+    }
+    if (this.state.selectTerm === false) {
+      cogoToast.error(
+        'Please review & select "I Agree to below Terms and Condition"'
+      );
+      this.setState({
+        selectTermErr: true,
+        selectTermHelperText:
+          'Please review & select "I Agree to below Terms and Condition"',
+      });
+      IsFormValid = false;
     }
     return IsFormValid;
   }
@@ -1570,6 +1590,7 @@ class Scheduleshipment extends React.Component {
     const {
       simpleSelect,
       salesleaddata,
+      AccountNumber,
       info_FromCountry,
       info_FromAddressline1,
       info_FromAddressline2,
@@ -1727,7 +1748,7 @@ class Scheduleshipment extends React.Component {
                 </div>
               ) : null}
               <div className="payment-type">
-                <p>Selected Payment Type</p>
+                <p>Selected Payment Type </p>
                 <div className="radio-inline">
                   <label>
                     <Radio
@@ -1755,21 +1776,22 @@ class Scheduleshipment extends React.Component {
                     />
                     Bank
                   </label>
-                  {/* {this.state.IsBillMyAccount ? ( */}
-                  <label>
-                    <Radio
-                      name="Bill My Account"
-                      value={this.state.selectBank}
-                      checked={
-                        this.state.selectedPaymentType === "Bill My Account"
-                          ? true
-                          : false
-                      }
-                      onChange={(event) => this.billmyAccountChange(event)}
-                    />
-                    Bill My Account
-                  </label>
-                  {/* ) : null} */}
+
+                  {this.state.AccountNumber.AccountNumber ? (
+                    <label>
+                      <Radio
+                        name="Bill My Account"
+                        value={this.state.selectBank}
+                        checked={
+                          this.state.selectedPaymentType === "Bill My Account"
+                            ? true
+                            : false
+                        }
+                        onChange={(event) => this.billmyAccountChange(event)}
+                      />
+                      Bill My Account
+                    </label>
+                  ) : null}
                 </div>
               </div>
             </GridItem>
@@ -2113,7 +2135,8 @@ class Scheduleshipment extends React.Component {
           ) : null}
           {this.state.hideBillMyAccount === true ? (
             <div className="billmy-account">
-              Bill all charges to account number : {BillMyAccountNumber}
+              Bill all charges to account number : {AccountNumber.AccountNumber}
+              {/* {BillMyAccountNumber} */}
             </div>
           ) : null}
 

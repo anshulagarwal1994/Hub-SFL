@@ -36,7 +36,7 @@ import {
 } from "mdbreact";
 
 import image from "assets/img/left-SIGNUP-image.png";
-const moment = require("moment-timezone")
+const moment = require("moment-timezone");
 const useStyles = makeStyles(styles);
 
 class RegisterPage extends Component {
@@ -44,6 +44,7 @@ class RegisterPage extends Component {
     // this.handleBeforeunload = this.handleBeforeunload.bind(this)
     super(props);
     this.state = {
+      username1: "",
       fullnameErr: false,
       usernameErr: false,
       emailErr: false,
@@ -79,6 +80,19 @@ class RegisterPage extends Component {
       checkLowerCase: false,
       checkNumber: false,
       checkSpecialCharacter: false,
+
+      userCheckNumber: false,
+      userCheckLetter: null,
+      userCheckLowerCase: false,
+      userCheckSpecialCharacter: false,
+      userCheckUpperCase: null,
+      userMinCharacter: null,
+      userMaxCharacter: null,
+      passwordPoup: false,
+      userNamePoup: false,
+      NofirstInputSpecialCharacter: false,
+      SpecialCharactervalid: null,
+      specialcharacter: false,
     };
   }
 
@@ -108,20 +122,31 @@ class RegisterPage extends Component {
         usernameHelperText: "Please enter username",
       });
     }
-    if (this.state.usernameErr) {
+
+    if (
+      this.state.userCheckLetter === false ||
+      this.state.specialcharacter === true ||
+      // this.state.NofirstInputSpecialCharacter === false ||
+      // this.state.userCheckSpecialCharacter === false ||
+      this.state.userMinCharacter === false ||
+      // ||
+      // this.state.userCheckUpperCase === false
+      this.state.userMaxCharacter === false
+    ) {
       IsFormValid = false;
       this.setState({
         usernameErr: true,
         usernameHelperText: "Please enter valid username",
       });
     }
-    if (this.state.username.length < 9) {
-      IsFormValid = false;
-      this.setState({
-        usernameErr: true,
-        usernameHelperText: "Please enter atleast 8 characters",
-      });
-    }
+
+    // if (this.state.username.length < 9) {
+    //   IsFormValid = false;
+    //   this.setState({
+    //     usernameErr: true,
+    //     usernameHelperText: "Please enter atleast 8 characters",
+    //   });
+    // }
     if (this.state.emailErr) {
       this.hideLoader();
       IsFormValid = false;
@@ -195,6 +220,7 @@ class RegisterPage extends Component {
   };
 
   handleBlur = (event, type) => {
+    // var userNmaeRegex=/^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[@#$%^&+=._-])[a-zA-Z0-9@#$%^&+=._-]{8,32}$/;
     if (type === "fullname") {
       this.setState({ checkFullName: true });
       let val = event.target.value;
@@ -220,37 +246,210 @@ class RegisterPage extends Component {
     if (type === "username") {
       this.setState({ checkUserName: true });
       let usernameVal = event.target.value;
+      // console.log("checkusernameerr", event.target.value.splice(0, 5));
       if (CommonConfig.isEmpty(usernameVal)) {
         this.setState({
           usernameErr: true,
+          userCheckNumber: false,
+          userCheckLetter: false,
+          userCheckUpperCase: false,
+          userCheckSpecialCharacter: false,
+          userMinCharacter: false,
+          userMaxCharacter: false,
+          NofirstInputSpecialCharacter: false,
+          specialcharacter: false,
           usernameHelperText: "Please enter User Name",
         });
-      } else if (usernameVal.trim() !== usernameVal) {
-        this.setState({
-          usernameErr: true,
-          usernameHelperText: "Please enter valid User Name",
-        });
-      } else if (usernameVal.length < 8) {
-        this.setState({
-          userName: usernameVal,
-          usernameErr: true,
-          usernameHelperText: "Please enter valid User Name",
-        });
-      } else if (/[^A-Za-z@.0-9\d]/.test(usernameVal)) {
-        this.setState({
-          userName: usernameVal,
-          usernameErr: true,
-          usernameHelperText:
-            "Please do not enter space and special character except(@ and .)",
-        });
-      } else {
-        this.setState({
-          username: usernameVal,
-          usernameErr: false,
-          usernameHelperText: "",
-        });
+      } else if (usernameVal) {
+        if (usernameVal.match(CommonConfig.RegExp.regExpLowerCase)) {
+          this.setState({
+            username: usernameVal,
+            userCheckLetter: true,
+            usernameErr: false,
+            usernameHelperText: "",
+          });
+        } else {
+          this.setState({
+            username: usernameVal,
+            userCheckLetter: false,
+            usernameErr: false,
+            usernameHelperText: "",
+          });
+        }
+
+        // if (usernameVal.match(CommonConfig.RegExp.regExpUpperCase)) {
+        //   this.setState({
+        //     username: usernameVal,
+        //     userCheckLetter: false,
+        //     usernameErr: false,
+        //     usernameHelperText: "",
+        //   });
+        // } else {
+        //   this.setState({
+        //     username: usernameVal,
+        //     // userCheckLetter: true,
+        //     usernameErr: false,
+        //     usernameHelperText: "",
+        //   });
+        // }
+
+        if (usernameVal.match(CommonConfig.RegExp.regExpNumber)) {
+          this.setState({
+            username: usernameVal,
+            userCheckNumber: true,
+            usernameErr: false,
+            usernameHelperText: "",
+          });
+        } else {
+          this.setState({
+            username: usernameVal,
+            userCheckNumber: false,
+            usernameErr: false,
+            usernameHelperText: "",
+          });
+        }
+
+        if (usernameVal.match(CommonConfig.RegExp.regExpUpperCase)) {
+          this.setState({
+            username: usernameVal,
+            userCheckUpperCase: true,
+
+            usernameErr: false,
+            usernameHelperText: "",
+          });
+        } else {
+          this.setState({
+            username: usernameVal,
+            userCheckUpperCase: false,
+
+            usernameErr: false,
+            usernameHelperText: "",
+          });
+        }
+
+        if (usernameVal.length >= 8) {
+          this.setState({
+            username: usernameVal,
+            userMinCharacter: true,
+            usernameErr: false,
+            usernameHelperText: "",
+          });
+        } else {
+          this.setState({
+            username: usernameVal,
+            userMinCharacter: false,
+            usernameErr: false,
+            usernameHelperText: "",
+          });
+        }
+
+        if (usernameVal.length <= 32) {
+          this.setState({
+            username: usernameVal,
+            userMaxCharacter: true,
+
+            usernameErr: false,
+            usernameHelperText: "",
+          });
+        } else {
+          this.setState({
+            username: usernameVal,
+            userMaxCharacter: false,
+
+            usernameErr: false,
+            usernameHelperText: "",
+          });
+        }
+
+        if (usernameVal.match(CommonConfig.RegExp.userNameSpecialCharacter)) {
+          console.log(
+            "checkspecial",
+            usernameVal.match(CommonConfig.RegExp.userNameSpecialCharacter)
+          );
+          this.setState({
+            username: usernameVal,
+            userCheckSpecialCharacter: true,
+            SpecialCharactervalid: "",
+            usernameErr: false,
+            usernameHelperText: "",
+          });
+        } else {
+          this.setState({
+            username: usernameVal,
+            userCheckSpecialCharacter: false,
+            SpecialCharactervalid: "",
+            usernameErr: false,
+            usernameHelperText: "",
+          });
+        }
+
+        if (
+          (usernameVal.match(CommonConfig.RegExp.NofirstInputSpecialCharacter),
+          console.log(
+            "checkfirstinput12",
+            usernameVal.match(CommonConfig.RegExp.NofirstInputSpecialCharacter)
+          ))
+        ) {
+          this.setState({
+            username: usernameVal,
+            NofirstInputSpecialCharacter: true,
+            usernameErr: false,
+            usernameHelperText: "",
+          });
+        } else {
+          this.setState({
+            username: usernameVal,
+            NofirstInputSpecialCharacter: false,
+            usernameErr: false,
+            usernameHelperText: "",
+          });
+        }
+
+        if (usernameVal.match(CommonConfig.RegExp.userErrorSpecial)) {
+          this.setState({
+            username: usernameVal,
+            specialcharacter: true,
+            userCheckSpecialCharacter: "",
+            usernameErr: false,
+            usernameHelperText: "",
+          });
+        } else {
+          this.setState({
+            username: usernameVal,
+            specialcharacter: false,
+            usernameErr: false,
+            usernameHelperText: "",
+          });
+        }
       }
     }
+
+    // userNmaeRegex
+    //   else if (usernameVal.length < 8) {
+    //     this.setState({
+    //       username: usernameVal,
+    //       usernameErr: true,
+    //       usernameHelperText: "Please enter valid User Name",
+    //     });
+    //   } else if (
+    //     /^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[@#$%^&+=._-])[a-zA-Z0-9@#$%^&+=._-]{8,32}$/.test(
+    //       usernameVal
+    //     )
+    //   ) {
+    //     this.setState({
+    //       username: usernameVal,
+    //       usernameErr: true,
+    //       usernameHelperText:
+    //         "Please do not enter space and special character except(@ and .)",
+    //     });
+    //   } else {
+    //     this.setState({
+    //       username: usernameVal,
+    //       usernameErr: false,
+    //       usernameHelperText: "",
+    //     });
+    //   }
+    // }
 
     if (type === "email") {
       this.setState({ checkEmail: true });
@@ -565,7 +764,17 @@ class RegisterPage extends Component {
       checkLowerCase,
       checkSpecialCharacter,
       checkLetter,
+      userCheckNumber,
+      userCheckLetter,
+      userCheckSpecialCharacter,
+      userMinCharacter,
+      userMaxCharacter,
+      userCheckUpperCase,
+      NofirstInputSpecialCharacter,
+      SpecialCharactervalid,
+      specialcharacter,
     } = this.state;
+    console.log("specialcharacter11", NofirstInputSpecialCharacter);
 
     return (
       <div className="signup-page-outer">
@@ -636,165 +845,46 @@ class RegisterPage extends Component {
                                 />
                               </InputAdornment>
                             ),
+                          autoComplete: "none",
                         }}
                       />
-
-                      <CustomInput
-                        labelText="User Name"
-                        id="username"
-                        error={this.state.usernameErr}
-                        helperText={this.state.usernameHelperText}
-                        formControlProps={{ fullWidth: true }}
-                        inputProps={{
-                          onBlur: (event) => this.handleBlur(event, "username"),
-                          onFocus: () =>
-                            this.setState({
-                              usernameErr: false,
-                              usernameHelperText: "",
-                              checkUserName: false,
-                            }),
-                          endAdornment:
-                            checkUserName !== true ? (
-                              <Icon>person</Icon>
-                            ) : usernameErr ? (
-                              <InputAdornment position="end">
-                                <CloseIcon
-                                  style={{ color: red[500] }}
-                                  className={useStyles.danger}
-                                />
-                              </InputAdornment>
-                            ) : (
-                              <InputAdornment position="end">
-                                {" "}
-                                <DoneIcon
-                                  style={{ color: green[500] }}
-                                  className={useStyles.success}
-                                />
-                              </InputAdornment>
-                            ),
-                        }}
-                      />
-
-                      <GridContainer>
-                        <GridItem xs={12} sm={6} md={6} className="pln">
-                          <MDBContainer>
-                            <MDBPopover
-                              className="ps-popover-outer"
-                              placement="bottom"
-                              popover
-                              id="popper1"
-                            >
-                              <FormControl fullWidth className="pass-input">
-                                <TextField
-                                  label="Password"
-                                  id="password"
-                                  type="password"
-                                  error={this.state.passwordErr}
-                                  value={this.state.password}
-                                  formControlProps={{ fullWidth: true }}
-                                  aria-describedby="simple-popover"
-                                  helperText={this.state.passwordHelperText}
-                                  inputProps={{
-                                    onChange: (event) =>
-                                      this.handleBlur(event, "password"),
-                                    onBlur: (event) =>
-                                      this.handleBlur(event, "password"),
-                                    onFocus: () =>
-                                      this.setState({
-                                        passwordErr: false,
-                                        passwordHelperText: "",
-                                        checkPassword: true,
-                                      }),
-                                  }}
-                                />
-                              </FormControl>
-                              <div className="ps-popover-inner">
-                                <MDBPopoverHeader>
-                                  Your password must have:
-                                </MDBPopoverHeader>
-                                <MDBPopoverBody>
-                                  <React.Fragment>
-                                    {checkUpperCase ? (
-                                      <Typography style={{ color: "#2E7D32" }}>
-                                        <i class="far fa-check-circle"></i>One
-                                        uppercase letter
-                                      </Typography>
-                                    ) : (
-                                      <Typography color="error">
-                                        <i className="far fa-check-circle"></i>
-                                        One uppercase letter
-                                      </Typography>
-                                    )}
-                                    {checkLowerCase ? (
-                                      <Typography style={{ color: "#2E7D32" }}>
-                                        <i class="far fa-check-circle"></i>One
-                                        lowercase letter
-                                      </Typography>
-                                    ) : (
-                                      <Typography color="error">
-                                        <i class="far fa-check-circle"></i>One
-                                        lowercase letter
-                                      </Typography>
-                                    )}
-                                    {checkSpecialCharacter ? (
-                                      <Typography style={{ color: "#2E7D32" }}>
-                                        <i class="far fa-check-circle"></i>One
-                                        special character
-                                      </Typography>
-                                    ) : (
-                                      <Typography color="error">
-                                        <i class="far fa-check-circle"></i>One
-                                        special character
-                                      </Typography>
-                                    )}
-                                    {checkNumber ? (
-                                      <Typography style={{ color: "#2E7D32" }}>
-                                        <i class="far fa-check-circle"></i>One
-                                        number
-                                      </Typography>
-                                    ) : (
-                                      <Typography color="error">
-                                        <i class="far fa-check-circle"></i>One
-                                        number
-                                      </Typography>
-                                    )}
-                                    {checkLetter ? (
-                                      <Typography style={{ color: "#2E7D32" }}>
-                                        <i class="far fa-check-circle"></i>
-                                        Minimum 8 characters
-                                      </Typography>
-                                    ) : (
-                                      <Typography color="error">
-                                        <i class="far fa-check-circle"></i>
-                                        Minimum 8 characters
-                                      </Typography>
-                                    )}
-                                  </React.Fragment>
-                                </MDBPopoverBody>
-                              </div>
-                            </MDBPopover>
-                          </MDBContainer>
-                        </GridItem>
-
-                        <GridItem xs={12} sm={6} md={6} className="prn">
-                          <CustomInput
-                            labelText="Confirm Password"
-                            error={this.state.confirmpasswordErr}
-                            helperText={this.state.confirmpasswordHelperText}
+                      {/* <MDBPopover
+                        className="ps-popover-outer"
+                        placement="bottom"
+                        popover
+                        id="popper1"
+                      > */}
+                      <div className="pop-wrap">
+                        <FormControl fullWidth className="pass-input">
+                          <TextField
+                            label="User Name"
+                            labelText="User Name"
+                            id="username"
+                            error={this.state.usernameErr}
+                            helperText={this.state.usernameHelperText}
                             formControlProps={{ fullWidth: true }}
                             inputProps={{
-                              onBlur: (event) =>
-                                this.handleBlur(event, "confirmpassword"),
+                              onChange: (event) =>
+                                this.handleBlur(event, "username"),
                               onFocus: () =>
                                 this.setState({
-                                  confirmpasswordErr: false,
-                                  confirmpasswordHelperText: "",
-                                  checkConfirmPassword: false,
+                                  usernameErr: false,
+                                  usernameHelperText: "",
+                                  checkUserName: false,
+                                  userNamePoup: true,
                                 }),
+                              onBlur: () => {
+                                this.setState({
+                                  userNamePoup: false,
+                                });
+                              },
                               endAdornment:
-                                checkConfirmPassword !== true ? (
-                                  <Icon>lock_outline</Icon>
-                                ) : confirmpasswordErr ? (
+                                checkUserName !== true ? (
+                                  <Icon>person</Icon>
+                                ) : usernameErr ||
+                                  userCheckLetter === false ||
+                                  userMinCharacter === false ||
+                                  userMaxCharacter === false ? (
                                   <InputAdornment position="end">
                                     <CloseIcon
                                       style={{ color: red[500] }}
@@ -810,12 +900,275 @@ class RegisterPage extends Component {
                                     />
                                   </InputAdornment>
                                 ),
-                              type: "password",
-                              autoComplete: "off",
+                              autoComplete: "none",
                             }}
+                            onChange={(event) => {
+                              event.target.value.length <= 33 &&
+                                this.setState({
+                                  username1: event.target.value,
+                                });
+                            }}
+                            value={
+                              this.state.username1 ? this.state.username1 : ""
+                            }
                           />
-                        </GridItem>
-                      </GridContainer>
+                        </FormControl>
+
+                        {this.state.userNamePoup === true ? (
+                          <div className="ps-popover-inner">
+                            <MDBPopoverBody>
+                              <MDBPopoverHeader>
+                                User name must have:
+                              </MDBPopoverHeader>
+                              <React.Fragment>
+                                {userCheckLetter === true ||
+                                userCheckUpperCase === true ? (
+                                  <Typography style={{ color: "#2E7D32" }}>
+                                    <i class="far fa-check-circle"></i>Must be
+                                    between letters from a to z
+                                  </Typography>
+                                ) : userCheckLetter === false ||
+                                  userCheckUpperCase === false ? (
+                                  <Typography color="error">
+                                    <i className="far fa-check-circle"></i>
+                                    Must be between letters from a to z
+                                  </Typography>
+                                ) : userCheckLetter === null ||
+                                  userCheckUpperCase === null ? (
+                                  <Typography color="black">
+                                    <i className="far fa-check-circle"></i>
+                                    Must be between letters from a to z
+                                  </Typography>
+                                ) : (
+                                  <Typography color="black">
+                                    <i className="far fa-check-circle"></i>
+                                    Must be between letters from a to z
+                                  </Typography>
+                                )}
+
+                                {userCheckNumber === true ? (
+                                  <Typography style={{ color: "#2E7D32" }}>
+                                    <i class="far fa-check-circle"></i>Can
+                                    contain any numbers from 0 through 9
+                                  </Typography>
+                                ) : (
+                                  <Typography color="black">
+                                    <i class="far fa-check-circle"></i>Can
+                                    contain any numbers from 0 through 9
+                                  </Typography>
+                                )}
+
+                                {userCheckSpecialCharacter === true ? (
+                                  <Typography style={{ color: "#2E7D32" }}>
+                                    <i class="far fa-check-circle"></i>Can
+                                    contain special characters : @ . - _
+                                  </Typography>
+                                ) : userCheckSpecialCharacter === false ? (
+                                  <Typography color="black">
+                                    <i class="far fa-check-circle"></i>Can
+                                    contain special characters : @ . - _
+                                  </Typography>
+                                ) : specialcharacter === true ? (
+                                  <Typography color="error">
+                                    <i class="far fa-check-circle"></i>Can
+                                    contain special characters : @ . - _
+                                  </Typography>
+                                ) : (
+                                  <Typography style={{ color: "#dab813" }}>
+                                    <i class="far fa-check-circle"></i>Can
+                                    contain special characters : @ . - _
+                                  </Typography>
+                                )}
+
+                                {userMinCharacter === true &&
+                                userMaxCharacter === true ? (
+                                  <Typography style={{ color: "#2E7D32" }}>
+                                    <i class="far fa-check-circle"></i>Must be
+                                    between 8 to 32 characters long
+                                  </Typography>
+                                ) : userMinCharacter === false &&
+                                  userMaxCharacter === false ? (
+                                  <Typography color="error">
+                                    <i class="far fa-check-circle"></i>Must be
+                                    between 8 to 32 characters long
+                                  </Typography>
+                                ) : userMinCharacter === null &&
+                                  userMaxCharacter === null ? (
+                                  <Typography color="black">
+                                    <i class="far fa-check-circle"></i>Must be
+                                    between 8 to 32 characters long
+                                  </Typography>
+                                ) : (
+                                  <Typography color="black">
+                                    <i class="far fa-check-circle"></i>Must be
+                                    between 8 to 32 characters long
+                                  </Typography>
+                                )}
+                              </React.Fragment>
+                            </MDBPopoverBody>
+                          </div>
+                        ) : (
+                          ""
+                        )}
+                      </div>
+                      {/* </MDBPopover> */}
+                      <div className="pop-wrap">
+                        <GridContainer>
+                          <GridItem xs={12} sm={6} md={6} className="pln">
+                            <MDBContainer>
+                              {/* <MDBPopover
+                                className="ps-popover-outer"
+                                placement="bottom"
+                                popover
+                                id="popper1"
+                              > */}
+
+                              <FormControl fullWidth className="pass-input">
+                                <TextField
+                                  label="Password"
+                                  id="password"
+                                  type="password"
+                                  error={this.state.passwordErr}
+                                  value={this.state.password}
+                                  formControlProps={{ fullWidth: true }}
+                                  aria-describedby="simple-popover"
+                                  helperText={this.state.passwordHelperText}
+                                  inputProps={{
+                                    onChange: (event) =>
+                                      this.handleBlur(event, "password"),
+                                    onBlur: (event) =>
+                                      this.handleBlur(event, "password"),
+
+                                    onFocus: () =>
+                                      this.setState({
+                                        passwordErr: false,
+                                        passwordHelperText: "",
+                                        checkPassword: true,
+                                        passwordPoup: true,
+                                      }),
+
+                                    onBlur: () => {
+                                      this.setState({
+                                        passwordPoup: false,
+                                      });
+                                    },
+                                    autoComplete: "new-password",
+                                  }}
+                                />
+                              </FormControl>
+
+                              {/* </MDBPopover> */}
+                            </MDBContainer>
+                          </GridItem>
+                          <GridItem xs={12} sm={6} md={6} className="prn">
+                            <CustomInput
+                              labelText="Confirm Password"
+                              error={this.state.confirmpasswordErr}
+                              helperText={this.state.confirmpasswordHelperText}
+                              formControlProps={{ fullWidth: true }}
+                              inputProps={{
+                                onBlur: (event) =>
+                                  this.handleBlur(event, "confirmpassword"),
+                                onFocus: () =>
+                                  this.setState({
+                                    confirmpasswordErr: false,
+                                    confirmpasswordHelperText: "",
+                                    checkConfirmPassword: false,
+                                  }),
+                                endAdornment:
+                                  checkConfirmPassword !== true ? (
+                                    <Icon>lock_outline</Icon>
+                                  ) : confirmpasswordErr ? (
+                                    <InputAdornment position="end">
+                                      <CloseIcon
+                                        style={{ color: red[500] }}
+                                        className={useStyles.danger}
+                                      />
+                                    </InputAdornment>
+                                  ) : (
+                                    <InputAdornment position="end">
+                                      {" "}
+                                      <DoneIcon
+                                        style={{ color: green[500] }}
+                                        className={useStyles.success}
+                                      />
+                                    </InputAdornment>
+                                  ),
+                                autoComplete: "new-password",
+                                type: "password",
+                              }}
+                            />
+                          </GridItem>
+                        </GridContainer>
+                        {this.state.passwordPoup === true ? (
+                          <div className="ps-popover-inner">
+                            <MDBPopoverBody>
+                              <MDBPopoverHeader>
+                                Your password must have:
+                              </MDBPopoverHeader>
+                              <React.Fragment>
+                                {checkUpperCase ? (
+                                  <Typography style={{ color: "#2E7D32" }}>
+                                    <i class="far fa-check-circle"></i>One
+                                    uppercase letter
+                                  </Typography>
+                                ) : (
+                                  <Typography color="error">
+                                    <i className="far fa-check-circle"></i>
+                                    One uppercase letter
+                                  </Typography>
+                                )}
+                                {checkLowerCase ? (
+                                  <Typography style={{ color: "#2E7D32" }}>
+                                    <i class="far fa-check-circle"></i>One
+                                    lowercase letter
+                                  </Typography>
+                                ) : (
+                                  <Typography color="error">
+                                    <i class="far fa-check-circle"></i>One
+                                    lowercase letter
+                                  </Typography>
+                                )}
+                                {checkSpecialCharacter ? (
+                                  <Typography style={{ color: "#2E7D32" }}>
+                                    <i class="far fa-check-circle"></i>One
+                                    special character
+                                  </Typography>
+                                ) : (
+                                  <Typography color="error">
+                                    <i class="far fa-check-circle"></i>One
+                                    special character
+                                  </Typography>
+                                )}
+                                {checkNumber ? (
+                                  <Typography style={{ color: "#2E7D32" }}>
+                                    <i class="far fa-check-circle"></i>One
+                                    number
+                                  </Typography>
+                                ) : (
+                                  <Typography color="error">
+                                    <i class="far fa-check-circle"></i>One
+                                    number
+                                  </Typography>
+                                )}
+                                {checkLetter ? (
+                                  <Typography style={{ color: "#2E7D32" }}>
+                                    <i class="far fa-check-circle"></i>
+                                    Minimum 8 characters
+                                  </Typography>
+                                ) : (
+                                  <Typography color="error">
+                                    <i class="far fa-check-circle"></i>
+                                    Minimum 8 characters
+                                  </Typography>
+                                )}
+                              </React.Fragment>
+                            </MDBPopoverBody>
+                          </div>
+                        ) : (
+                          ""
+                        )}
+                      </div>
 
                       <CustomInput
                         labelText="Contact Number"
@@ -850,6 +1203,7 @@ class RegisterPage extends Component {
                                 />{" "}
                               </InputAdornment>
                             ),
+                          autoComplete: "none",
                         }}
                       />
 

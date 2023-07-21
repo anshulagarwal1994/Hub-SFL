@@ -4786,10 +4786,11 @@ class MyShipmentNew extends React.Component {
     const files = event.target.files[0];
 
     var allowedExtensions = /(\.jpg|\.jpeg|\.png|\.pdf)$/i;
-    if(!allowedExtensions.exec(files.name)){
-      cogoToast.error('Please upload file having extensions .jpeg/.jpg/.png/.pdf only.');
-    }else{
-
+    if (!allowedExtensions.exec(files.name)) {
+      cogoToast.error(
+        "Please upload file having extensions .jpeg/.jpg/.png/.pdf only."
+      );
+    } else {
       if (files.size > 5000000) {
         cogoToast.error("please upload the file maximum 5MB");
       } else {
@@ -4805,7 +4806,6 @@ class MyShipmentNew extends React.Component {
           Attachments: AttachmentList,
           AttachmentList: [...this.state.AttachmentList, files],
         });
-
       }
     }
   };

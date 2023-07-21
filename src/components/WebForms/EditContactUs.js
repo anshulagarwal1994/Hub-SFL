@@ -20,6 +20,7 @@ import CardHeader from "components/Card/CardHeader.js";
 import CustomInput from "components/CustomInput/CustomInput.js";
 import InputAdornment from "@material-ui/core/InputAdornment";
 import moment from "moment";
+import momentTimezone from "moment-timezone";
 import { cardTitle } from "assets/jss/material-dashboard-pro-react.js";
 import Autocomplete from "@material-ui/lab/Autocomplete";
 import TextField from "@material-ui/core/TextField";
@@ -513,7 +514,9 @@ class EditContactUs extends Component {
         return (
           <tr>
             <td style={{ width: "154px" }}>
-              {moment(notes.CreatedOn).format(CommonConfig.dateFormat.dateTime)}
+              {momentTimezone(notes.CreatedOn)
+                .tz(CommonConfig.UStimezone)
+                .format(CommonConfig.dateFormat.dateTime)}
             </td>
             <td style={{ width: "597px" }}>
               {notes.disabled ? (

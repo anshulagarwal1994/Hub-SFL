@@ -32,6 +32,9 @@ import ExpandMoreIcon from "@material-ui/icons/ExpandMore";
 import { stubFalse } from "lodash";
 import { useDetectClickOutside } from "react-detect-click-outside";
 import { query } from "chartist";
+import Icon from "@material-ui/core/Icon";
+import { FormHelperText } from "@material-ui/core";
+import InputAdornment from "@material-ui/core/InputAdornment";
 
 const icon = <CheckBoxOutlineBlankIcon fontSize="small" />;
 const checkedIcon = <CheckBoxIcon fontSize="small" />;
@@ -77,6 +80,36 @@ class ShipmentNavigation extends Component {
       shipmentstatusList: [],
 
       //Search Shipment
+      shipmentType: [
+        { label: "Air", value: 1 },
+        { label: "Ocean", value: 2 },
+        { label: "Ground", value: 3 },
+      ],
+      allClearlist: [
+        { label: "No", value: 1 },
+        { label: "Not Ready", value: 2 },
+        { label: "Ready for Yes", value: 3 },
+        { label: "Collection", value: 4 },
+        { label: "Yes", value: 5 },
+      ],
+      managedby: [],
+      CountryList: [],
+      selectField: [],
+      selectFilter: [],
+      filter: {
+        field: "",
+        error: false,
+        fielderror: false,
+        filtererror: false,
+        fieldhelperText: "",
+        filterhelperText: "",
+        helperText: "",
+        filter: "",
+        condition: "",
+        filterValue: "",
+        Index: 1,
+      },
+      filtered: [],
       checkdata: "",
       checkAll: false,
       serachshowhide: false,
@@ -273,6 +306,12 @@ class ShipmentNavigation extends Component {
       this.shipmentStatusChange("", allFilter, "Myshipment");
       this.getShipmentListByStatus("Myshipment");
     }
+    await this.getStringMap();
+    await this.getCountry();
+    await this.managedby();
+    await this.getFilterlist();
+    //this.showHide();
+    this.setState({ filtered: [this.state.filter] });
   }
 
   // Shipment Methods
@@ -468,7 +507,7 @@ class ShipmentNavigation extends Component {
           Query = Query + `)`;
         }
       }
-      console.log("query: ", Query);
+      //console.log("query: ", Query);
       let data = {
         ContactName: "",
         ContactNumber: "",
@@ -1036,6 +1075,8 @@ class ShipmentNavigation extends Component {
           this.showLoader();
           if (data.AllClear == "Ready for Yes") {
             data.AllClear = 3;
+          } else if (data.AllClear == "Collections") {
+            data.AllClear = 4;
           }
           api
             .post("reports/getShipmentReport", data)
@@ -1451,9 +1492,328 @@ class ShipmentNavigation extends Component {
         [arrType]: previousList,
         StatusQuery: this.state.shipmentquery,
       });
-
     }
-    console.log("checkedArr = ",checkedArr);
+    console.log("checkedArr = ", checkedArr);
+  };
+  //New search by kruti
+  getFilterlist = () => {
+    debugger;
+    let data = { stringMapType: "SEARCHSALESLEADFILTER" };
+    api
+      .post("stringMap/getstringMap", data)
+      .then((result) => {
+        if (result.success) {
+          const filterObj = result.data.map((filter) => {
+            return { label: filter.Description, value: filter.StringMapName };
+          });
+          this.setState({ selectFilter: filterObj });
+        } else {
+          cogoToast.error("Something Went Wrong");
+        }
+      })
+      .catch((err) => {
+        cogoToast.error("Something Went Wrong");
+      });
+  };
+  getStringMap = () => {
+    let data = { stringMapType: "SEARCHSHIPMENTFIELD" };
+    api
+      .post("stringMap/getstringMap", data)
+      .then((result) => {
+        if (result.success) {
+          const fieldObj = result.data.map((field) => {
+            return { label: field.Description, value: field.StringMapName };
+          });
+          this.setState({ selectField: fieldObj });
+        } else {
+          cogoToast.error("Something Went Wrong");
+        }
+      })
+      .catch((err) => {
+        cogoToast.error("Something Went Wrong");
+      });
+  };
+  getCountry = () => {
+    try {
+      api
+        .get("location/getCountryList")
+        .then((res) => {
+          if (res.success) {
+            var Country = res.data;
+            this.setState({ CountryList: Country });
+          }
+        })
+        .catch((err) => {
+          cogoToast.error("Something Went Wrong");
+        });
+    } catch (error) {
+      cogoToast.error("Something Went Wrong");
+    }
+  };
+  managedby = () => {
+    try {
+      api
+        .get("salesLead/getManageSalesLeadUser")
+        .then((result) => {
+          if (result.success) {
+            this.setState({ managedby: result.Data });
+          } else {
+            cogoToast.error("Something went wrong");
+          }
+        })
+        .catch((err) => {
+          cogoToast.error("Something Went Wrong");
+        });
+    } catch (err) {
+      cogoToast.error("Something Went Wrong");
+    }
+  };
+  fieldSelect = () => {
+    return this.state.selectField.map((content) => {
+      return (
+        <MenuItem
+          classes={{ root: classes.selectMenuItem }}
+          value={content.value}
+        >
+          {" "}
+          {content.label}{" "}
+        </MenuItem>
+      );
+    });
+  };
+  requestChange = (event, idx) => {
+    const { name, value } = event.target;
+    const filterlist = this.state.filtered;
+    for (var i = 0; i < filterlist.length; i++) {
+      filterlist[i]["error"] = false;
+      filterlist[i]["helperText"] = "";
+      filterlist[i]["fielderror"] = false;
+      filterlist[i]["fieldhelperText"] = "";
+      filterlist[i]["filtererror"] = false;
+      filterlist[i]["filterhelperText"] = "";
+    }
+
+    if (name === "field") {
+      filterlist[idx][name] = value;
+      filterlist[idx]["filterValue"] = "";
+      filterlist[idx]["filter"] = "";
+      filterlist[idx]["error"] = false;
+      filterlist[idx]["helperText"] = "";
+    } else {
+      filterlist[idx][name] = value;
+    }
+
+    this.setState({ filtered: filterlist });
+  };
+
+  filterDropDown = () => {
+    debugger;
+    return this.state.selectFilter
+      .filter(
+        (x) =>
+          x.label !== "Start With" &&
+          x.label !== "Contains" &&
+          x.label !== "Ends With"
+      )
+      .map((content) => {
+        return (
+          <MenuItem classes={{ root: classes.selectMenuItem }} value={content}>
+            {" "}
+            {content.label}{" "}
+          </MenuItem>
+        );
+      });
+  };
+
+  filterSelect = () => {
+    return this.state.selectFilter.map((content) => {
+      return (
+        <MenuItem classes={{ root: classes.selectMenuItem }} value={content}>
+          {" "}
+          {content.label}{" "}
+        </MenuItem>
+      );
+    });
+  };
+  managedBY = (event, type, idx, value) => {
+    const filterlist = this.state.filtered;
+    filterlist[idx][type] = value;
+    filterlist[idx]["error"] = false;
+    filterlist[idx]["helperText"] = "";
+    this.setState({ filtered: filterlist });
+  };
+  shipmentType = (event, type, idx, value) => {
+    const filterList = this.state.filtered;
+    filterList[idx][type] = value;
+    filterList[idx]["error"] = false;
+    filterList[idx]["helperText"] = "";
+    this.setState({ filtered: filterList });
+  };
+  allClearchange = (event, type, idx, value) => {
+    debugger;
+    const filterList = this.state.filtered;
+    filterList[idx][type] = value;
+    filterList[idx]["error"] = false;
+    filterList[idx]["helperText"] = "";
+    this.setState({ filtered: filterList });
+  };
+  filterRow = () => {
+    return this.state.filtered.map((selectfield, idx) => {
+      debugger;
+      const allClear = this.state.allClearlist.map((countrylist) => {
+        return { value: countrylist.CountryID, label: countrylist.CountryName };
+      });
+      const managedby = this.state.managedby.map((managedby) => {
+        return { value: managedby.PersonID, label: managedby.Name };
+      });
+      const shipmentType = this.state.shipmentType.map((content) => {
+        return { value: content.value, label: content.label };
+      });
+
+      return (
+        <GridContainer>
+          <GridItem xs={12} sm={12} md={3}>
+            <FormControl fullWidth error={selectfield.fielderror}>
+              <InputLabel
+                htmlFor="selectshipmenttype"
+                className={classes.selectLabel}
+              >
+                Select Field
+              </InputLabel>
+              <Select
+                fullWidth={true}
+                id="field"
+                name="field"
+                value={selectfield.field}
+                onChange={(event) => this.requestChange(event, idx)}
+              >
+                {this.fieldSelect()}
+              </Select>
+              <FormHelperText>{selectfield.fieldhelperText}</FormHelperText>
+            </FormControl>
+          </GridItem>
+          <GridItem xs={12} sm={12} md={3}>
+            <FormControl fullWidth error={selectfield.filtererror}>
+              <InputLabel
+                htmlFor="selectfilter"
+                className={classes.selectLabel}
+              >
+                Select Filter
+              </InputLabel>
+              <Select
+                fullWidth={true}
+                id="filter"
+                name="filter"
+                value={selectfield.filter}
+                onChange={(event) => this.requestChange(event, idx)}
+              >
+                {selectfield.field === "ManagedBy" ||
+                selectfield.field === "ToCountryID" ||
+                selectfield.field === "FromCountryID" ||
+                selectfield.field === "PackageType" ||
+                selectfield.field === "ProposalStatus"
+                  ? this.filterDropDown()
+                  : this.filterSelect()}
+              </Select>
+              <FormHelperText>{selectfield.filterhelperText}</FormHelperText>
+            </FormControl>
+          </GridItem>
+          <GridItem xs={12} sm={12} md={3}>
+            {selectfield.field === "Managed By" ? (
+              <Autocomplete
+                options={managedby}
+                id="managedby"
+                name="filterValue"
+                getOptionLabel={(option) =>
+                  option.label ? option.label : option
+                }
+                value={selectfield.filterValue}
+                onChange={(event, value) =>
+                  this.managedBY(event, "filterValue", idx, value)
+                }
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    error={selectfield.error}
+                    helperText={selectfield.helperText}
+                    label="Managed By"
+                    margin="normal"
+                    fullWidth
+                  />
+                )}
+              />
+            ) : selectfield.field === "Shipment Type" ? (
+              <Autocomplete
+                options={shipmentType}
+                id="shipmenttype"
+                name="filterValue"
+                getOptionLabel={(option) =>
+                  option.label ? option.label : option
+                }
+                value={selectfield.filterValue}
+                onChange={(event, value) =>
+                  this.shipmentType(event, "filterValue", idx, value)
+                }
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    error={selectfield.error}
+                    helperText={selectfield.helperText}
+                    label="Shipment Type"
+                    margin="normal"
+                    fullWidth
+                  />
+                )}
+              />
+            ) : selectfield.field === "All Clear ?" ? (
+              <Autocomplete
+                options={allClear}
+                id="allClear"
+                name="filterValue"
+                getOptionLabel={(option) =>
+                  option.label ? option.label : option
+                }
+                value={selectfield.filterValue}
+                onChange={(event, value) =>
+                  this.allClearchange(event, "filterValue", idx, value)
+                }
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    error={selectfield.error}
+                    helperText={selectfield.helperText}
+                    label="All Clear"
+                    margin="normal"
+                    fullWidth
+                  />
+                )}
+              />
+            ) : (
+              <CustomInput
+                labelText="Enter Value"
+                id="filterValue"
+                error={selectfield.error}
+                helperText={selectfield.helperText}
+                formControlProps={{ fullWidth: true }}
+                inputProps={{
+                  value: selectfield.filterValue,
+                  name: "filterValue",
+                  onChange: (event) => this.requestChange(event, idx),
+                  endAdornment: (
+                    <InputAdornment
+                      position="end"
+                      className={classes.inputAdornment}
+                    >
+                      <Icon className={classes.User}>chrome_reader_mode</Icon>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            )}
+          </GridItem>
+        </GridContainer>
+      );
+    });
   };
 
   render() {
@@ -2382,6 +2742,44 @@ class ShipmentNavigation extends Component {
                         </Button>
                       </div>
                     </div>
+
+                    {/* kruti... */}
+
+                    <GridItem>
+                      <GridContainer justify="center">
+                        <div className="expand-panel-outer">
+                          <GridContainer justify="center">
+                            <GridItem xs={12} sm={11} md={11}>
+                              <div className="sales-lead-table">
+                                <table>
+                                  <tbody>
+                                    {SearchAccess.ReadAccess === 1
+                                      ? this.filterRow()
+                                      : this.basicFilter()}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </GridItem>
+                          </GridContainer>
+                        </div>
+                        <div className="shipment-submit">
+                          <div className="right">
+                            <Button
+                              color="rose"
+                              onClick={() => this.searchReport()}
+                            >
+                              Search
+                            </Button>
+                            <Button
+                              color="secondary"
+                              onClick={() => this.resetReport()}
+                            >
+                              Reset
+                            </Button>
+                          </div>
+                        </div>
+                      </GridContainer>
+                    </GridItem>
                   </>
                 ) : null}
                 {SearchClicked ? (

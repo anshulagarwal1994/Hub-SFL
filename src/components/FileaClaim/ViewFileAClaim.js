@@ -23,6 +23,7 @@ import { CommonConfig } from "../../utils/constant";
 import Autocomplete from "@material-ui/lab/Autocomplete";
 import ReactDropzone from "react-dropzone";
 import moment from "moment";
+import momentTimezone from "moment-timezone";
 import Tooltip from "@material-ui/core/Tooltip";
 import InfoIcon from "@material-ui/icons/PriorityHigh";
 import DialogActions from "@material-ui/core/DialogActions";
@@ -448,15 +449,33 @@ class ViewFileAClaim extends Component {
           <span className="img-box-outer">
             {Path.AttachmentType.includes("image") ? (
               <a
-                href={ Path.AttachmentPath === 'ClaimAttachment/'+Path.AttachmentName ? fileBase + Path.AttachmentPath : Path.AttachmentPath}
+                href={
+                  Path.AttachmentPath ===
+                  "ClaimAttachment/" + Path.AttachmentName
+                    ? fileBase + Path.AttachmentPath
+                    : Path.AttachmentPath
+                }
                 rel="noopener noreferrer"
                 target="_blank"
               >
-                <img alt="Preview" src={Path.AttachmentPath === 'ClaimAttachment/'+Path.AttachmentName ? fileBase + Path.AttachmentPath : Path.AttachmentPath} />
+                <img
+                  alt="Preview"
+                  src={
+                    Path.AttachmentPath ===
+                    "ClaimAttachment/" + Path.AttachmentName
+                      ? fileBase + Path.AttachmentPath
+                      : Path.AttachmentPath
+                  }
+                />
               </a>
             ) : (
               <a
-                href={Path.AttachmentPath === 'ClaimAttachment/'+Path.AttachmentName ? fileBase + Path.AttachmentPath : Path.AttachmentPath}
+                href={
+                  Path.AttachmentPath ===
+                  "ClaimAttachment/" + Path.AttachmentName
+                    ? fileBase + Path.AttachmentPath
+                    : Path.AttachmentPath
+                }
                 rel="noopener noreferrer"
                 target="_blank"
               >
@@ -578,7 +597,9 @@ class ViewFileAClaim extends Component {
         return (
           <tr>
             <td style={{ width: "154px" }}>
-              {moment(notes.CreatedOn).format(CommonConfig.dateFormat.dateTime)}
+              {momentTimezone(notes.CreatedOn)
+                .tz(CommonConfig.UStimezone)
+                .format(CommonConfig.dateFormat.dateTime)}
             </td>
 
             <td style={{ width: "597px" }}>

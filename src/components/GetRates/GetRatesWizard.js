@@ -400,11 +400,15 @@ class GetRatesWizard extends React.Component {
                               <td>{data.ServiceDisplayName}</td>
                               <td>{data.Delivery_Date}</td>
                               <td className="tbl-align-right">
-                                $ {data.Rates.toFixed(2)}
+                                {data.Rates != 0
+                                  ? "$ " + data.Rates.toFixed(2)
+                                  : "Call for Rates"}
                               </td>
                               <td>
                                 <Button
-                                  disabled={data.IsError}
+                                  disabled={
+                                    data.Rates != 0 ? data.IsError : true
+                                  }
                                   color="success"
                                   onClick={() => this.bookShipment(data)}
                                 >

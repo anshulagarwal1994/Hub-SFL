@@ -34,7 +34,7 @@ const classes = useStyles();
 
 var yesterday = Datetime.moment().subtract(1, "day");
 
-var valid = function (current) {
+var valid = function(current) {
   return (
     current.day() !== 0 && current.day() !== 6 && current.isAfter(yesterday)
   );
@@ -44,6 +44,8 @@ class Step1 extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
+      packageWeight: "Weight (lbs)*",
+      dimenstionType: "Dimenstion (L + W + H)*",
       finalGetResults: [],
       CountryList: [],
       StateList: [],
@@ -79,7 +81,13 @@ class Step1 extends React.Component {
 
       disableBtn: 1,
       StartDate: moment().toDate(),
-
+      SelectedWeightType: "LB",
+      packedBy: [{ value: "KG", label: "KG" }, { value: "LB", label: "LB" }],
+      SelectedDimensitionType: "Inches",
+      DimensitionpackedBy: [
+        { value: "Inches", label: "Inches" },
+        { value: "CM", label: "CM" },
+      ],
       Residential: [
         { value: "No", label: "No" },
         { value: "Yes", label: "Yes" },
@@ -97,7 +105,8 @@ class Step1 extends React.Component {
 
       GetRate: {
         PackageType: "Package",
-        WeightType: "LBS",
+        WeightType: "LB",
+        SelectedWeightType: "",
         PickUp: "No",
         Residential: "No",
 
@@ -303,7 +312,19 @@ class Step1 extends React.Component {
 
     return year + "" + (monthIndex + 1) + "" + day;
   }
-
+  packedBy = () => {
+    return this.state.packedBy.map((content) => {
+      return (
+        <MenuItem
+          classes={{ root: classes.selectMenuItem }}
+          value={content.value}
+        >
+          {" "}
+          {content.label}{" "}
+        </MenuItem>
+      );
+    });
+  };
   showLoader = () => {
     this.setState({ Loading: true });
   };
@@ -345,7 +366,7 @@ class Step1 extends React.Component {
           console.log("err...", err);
           cogoToast.error("Something Went Wrong");
         });
-    } catch (error) { }
+    } catch (error) {}
   }
 
   ChangeFromCountry = (event) => {
@@ -364,7 +385,7 @@ class Step1 extends React.Component {
       fromUpsCityHelperText: "",
     });
 
-    var SelectedCountry = _.findIndex(this.state.CountryList, function (
+    var SelectedCountry = _.findIndex(this.state.CountryList, function(
       country
     ) {
       return country.CountryName === event.label;
@@ -375,8 +396,22 @@ class Step1 extends React.Component {
     GetRate.FromState = "";
 
     var SelectedCity;
+    if (GetRate.FromCountry.CountryCode === "IN") {
+      this.setState({
+        SelectedWeightType: "KG",
+        SelectedDimensitionType: "CM",
+      });
+    } else {
+      this.setState({
+        SelectedWeightType: "LB",
+        SelectedDimensitionType: "Inches",
+      });
+    }
 
-    if (GetRate.FromCountry.CountryCode === "US" || GetRate.FromCountry.CountryCode === "CN") {
+    if (
+      GetRate.FromCountry.CountryCode === "US" ||
+      GetRate.FromCountry.CountryCode === "CN"
+    ) {
       SelectedCity = { label: "Select City" };
     } else if (
       GetRate.FromCountry.IsFedexCity === 0 &&
@@ -410,7 +445,10 @@ class Step1 extends React.Component {
 
     var CountryId = GetRate.FromCountry.CountryID;
 
-    if (GetRate.FromCountry.IsFedexCity || GetRate.FromCountry.CountryCode === 'CN') {
+    if (
+      GetRate.FromCountry.IsFedexCity ||
+      GetRate.FromCountry.CountryCode === "CN"
+    ) {
       var CityData = { CityType: "FedEx", CountryId: CountryId };
       this.showLoader();
       api
@@ -478,7 +516,7 @@ class Step1 extends React.Component {
     });
     var SelectedCity;
 
-    var SelectedCountry = _.findIndex(this.state.CountryList, function (
+    var SelectedCountry = _.findIndex(this.state.CountryList, function(
       country
     ) {
       return country.CountryName === event.label;
@@ -487,7 +525,10 @@ class Step1 extends React.Component {
     var GetRate = this.state.GetRate;
     GetRate.ToCountry = this.state.CountryList[SelectedCountry];
     GetRate.ToState = "";
-    if (GetRate.ToCountry.CountryCode === "US" || GetRate.ToCountry.CountryCode === 'CN') {
+    if (
+      GetRate.ToCountry.CountryCode === "US" ||
+      GetRate.ToCountry.CountryCode === "CN"
+    ) {
       SelectedCity = { label: "Select City" };
     } else if (
       GetRate.ToCountry.IsFedexCity === 0 &&
@@ -519,7 +560,10 @@ class Step1 extends React.Component {
 
     var CountryId = GetRate.ToCountry.CountryID;
 
-    if (GetRate.ToCountry.IsFedexCity || GetRate.ToCountry.CountryCode === 'CN') {
+    if (
+      GetRate.ToCountry.IsFedexCity ||
+      GetRate.ToCountry.CountryCode === "CN"
+    ) {
       var CityData = { CityType: "FedEx", CountryId: CountryId };
       this.showLoader();
       api
@@ -662,7 +706,7 @@ class Step1 extends React.Component {
                 var state = "";
                 var CityData = _.filter(
                   data["results"][0]["address_components"],
-                  function (data) {
+                  function(data) {
                     if (data.types[0] == "locality") {
                       return data.types[0] === "locality";
                     }
@@ -671,7 +715,7 @@ class Step1 extends React.Component {
 
                 var CityData2 = _.filter(
                   data["results"][0]["address_components"],
-                  function (data) {
+                  function(data) {
                     if (data.types[0] == "neighborhood") {
                       return data.types[0] === "neighborhood";
                     }
@@ -680,7 +724,7 @@ class Step1 extends React.Component {
 
                 var CityData3 = _.filter(
                   data["results"][0]["address_components"],
-                  function (data) {
+                  function(data) {
                     if (data.types[0] == "administrative_area_level_2") {
                       return data.types[0] === "administrative_area_level_2";
                     }
@@ -689,7 +733,7 @@ class Step1 extends React.Component {
 
                 var CityData4 = _.filter(
                   data["results"][0]["address_components"],
-                  function (data) {
+                  function(data) {
                     if (data.types[0] == "postal_town") {
                       return data.types[0] === "postal_town";
                     }
@@ -698,7 +742,7 @@ class Step1 extends React.Component {
 
                 var CityData5 = _.filter(
                   data["results"][0]["address_components"],
-                  function (data) {
+                  function(data) {
                     if (data.types[0] == "administrative_area_level_1") {
                       return data.types[0] === "administrative_area_level_1";
                     }
@@ -761,7 +805,7 @@ class Step1 extends React.Component {
                 let fromStatename = "";
                 if (
                   state == "" &&
-                  _.filter(data["results"][0]["address_components"], function (
+                  _.filter(data["results"][0]["address_components"], function(
                     data
                   ) {
                     return data.types[0] === "administrative_area_level_1";
@@ -769,51 +813,61 @@ class Step1 extends React.Component {
                 ) {
                   state = _.filter(
                     data["results"][0]["address_components"],
-                    function (data) {
+                    function(data) {
                       return data.types[0] === "administrative_area_level_1";
                     }
                   )[0].short_name;
 
                   fromStatename = _.filter(
                     data["results"][0]["address_components"],
-                    function (data) {
+                    function(data) {
                       return data.types[0] === "administrative_area_level_1";
                     }
                   )[0].long_name;
                 }
 
                 var GetRate = this.state.GetRate;
-                GetRate.FromCity = FinalCity.length > 0 ? FinalCity[0].City_code : "";
+                GetRate.FromCity =
+                  FinalCity.length > 0 ? FinalCity[0].City_code : "";
                 GetRate.FromFedExCity = null;
                 GetRate.FromUPSCity = null;
                 GetRate.FromState = state && state.length === 2 ? state : "";
                 GetRate.FromZipCode = zip;
-                
+
                 if (GetRate.FromCountry.CountryCode === "CN") {
-                  var SelectedCity = FinalCity.length > 0
-                    ? { value: FinalCity[0].City_code, label: FinalCity[0].Name }
-                    : { label: "Select City" };
-                    this.setState({
-                      GetRate: GetRate,
-                      FromState: state,
-                      FromFedExSelectedCity: SelectedCity,
-                      fromStateName: fromStatename,
-                    });
-                }
-                else {
+                  var SelectedCity =
+                    FinalCity.length > 0
+                      ? {
+                          value: FinalCity[0].City_code,
+                          label: FinalCity[0].Name,
+                        }
+                      : { label: "Select City" };
+                  this.setState({
+                    GetRate: GetRate,
+                    FromState: state,
+                    FromFedExSelectedCity: SelectedCity,
+                    fromStateName: fromStatename,
+                  });
+                } else {
                   var SelectedCity =
                     GetRate.FromCountry.CountryCode === "US"
-                      ? { value: FinalCity[0].City_code, label: FinalCity[0].Name }
+                      ? {
+                          value: FinalCity[0].City_code,
+                          label: FinalCity[0].Name,
+                        }
                       : { value: "Not Required", label: "Not Required" };
-                      this.setState({
-                        GetRate: GetRate,
-                        FromState: state,
-                        FromSelectedCity: SelectedCity,
-                        fromStateName: fromStatename,
-                      });
+                  this.setState({
+                    GetRate: GetRate,
+                    FromState: state,
+                    FromSelectedCity: SelectedCity,
+                    fromStateName: fromStatename,
+                  });
                 }
                 if (FinalCity.length === 0) {
-                  var CityData = { CityType: "FedEx", CountryId: GetRate.FromCountry.CountryID };
+                  var CityData = {
+                    CityType: "FedEx",
+                    CountryId: GetRate.FromCountry.CountryID,
+                  };
                   this.showLoader();
                   api
                     .post("location/getCityList", CityData)
@@ -839,7 +893,7 @@ class Step1 extends React.Component {
 
                 if (
                   city == "" &&
-                  _.filter(data["results"][0]["address_components"], function (
+                  _.filter(data["results"][0]["address_components"], function(
                     data
                   ) {
                     return data.types[0] === "locality";
@@ -847,13 +901,13 @@ class Step1 extends React.Component {
                 ) {
                   city = _.filter(
                     data["results"][0]["address_components"],
-                    function (data) {
+                    function(data) {
                       return data.types[0] === "locality";
                     }
                   )[0].short_name;
                 } else if (
                   city == "" &&
-                  _.filter(data["results"][0]["address_components"], function (
+                  _.filter(data["results"][0]["address_components"], function(
                     data
                   ) {
                     return data.types[0] === "administrative_area_level_3";
@@ -861,13 +915,13 @@ class Step1 extends React.Component {
                 ) {
                   city = _.filter(
                     data["results"][0]["address_components"],
-                    function (data) {
+                    function(data) {
                       return data.types[0] === "administrative_area_level_3";
                     }
                   )[0].short_name;
                 } else if (
                   city == "" &&
-                  _.filter(data["results"][0]["address_components"], function (
+                  _.filter(data["results"][0]["address_components"], function(
                     data
                   ) {
                     return data.types[0] === "political";
@@ -875,13 +929,13 @@ class Step1 extends React.Component {
                 ) {
                   city = _.filter(
                     data["results"][0]["address_components"],
-                    function (data) {
+                    function(data) {
                       return data.types[0] === "political";
                     }
                   )[0].short_name;
                 } else if (
                   city == "" &&
-                  _.filter(data["results"][0]["address_components"], function (
+                  _.filter(data["results"][0]["address_components"], function(
                     data
                   ) {
                     return data.types[0] === "neighborhood";
@@ -889,13 +943,13 @@ class Step1 extends React.Component {
                 ) {
                   city = _.filter(
                     data["results"][0]["address_components"],
-                    function (data) {
+                    function(data) {
                       return data.types[0] === "neighborhood";
                     }
                   )[0].short_name;
                 } else if (
                   city == "" &&
-                  _.filter(data["results"][0]["address_components"], function (
+                  _.filter(data["results"][0]["address_components"], function(
                     data
                   ) {
                     return data.types[0] === "administrative_area_level_1";
@@ -903,13 +957,13 @@ class Step1 extends React.Component {
                 ) {
                   city = _.filter(
                     data["results"][0]["address_components"],
-                    function (data) {
+                    function(data) {
                       return data.types[0] === "administrative_area_level_1";
                     }
                   )[0].long_name;
                 } else if (
                   city == "" &&
-                  _.filter(data["results"][0]["address_components"], function (
+                  _.filter(data["results"][0]["address_components"], function(
                     data
                   ) {
                     return data.types[0] === "administrative_area_level_2";
@@ -917,7 +971,7 @@ class Step1 extends React.Component {
                 ) {
                   city = _.filter(
                     data["results"][0]["address_components"],
-                    function (data) {
+                    function(data) {
                       return data.types[0] === "administrative_area_level_2";
                     }
                   )[0].long_name;
@@ -927,7 +981,7 @@ class Step1 extends React.Component {
                 let fromStatename = "";
                 if (
                   state == "" &&
-                  _.filter(data["results"][0]["address_components"], function (
+                  _.filter(data["results"][0]["address_components"], function(
                     data
                   ) {
                     return data.types[0] === "administrative_area_level_1";
@@ -935,14 +989,14 @@ class Step1 extends React.Component {
                 ) {
                   state = _.filter(
                     data["results"][0]["address_components"],
-                    function (data) {
+                    function(data) {
                       return data.types[0] === "administrative_area_level_1";
                     }
                   )[0].short_name;
 
                   fromStatename = _.filter(
                     data["results"][0]["address_components"],
-                    function (data) {
+                    function(data) {
                       return data.types[0] === "administrative_area_level_1";
                     }
                   )[0].long_name;
@@ -973,26 +1027,35 @@ class Step1 extends React.Component {
                 GetRate.FromZipCode = zip;
 
                 if (GetRate.FromCountry.CountryCode === "CN") {
-                  var SelectedCity = FinalCity.length > 0
-                    ? { value: FinalCity[0].Citycode, label: FinalCity[0].CityName }
-                    : { label: "Select City" };
-                    this.setState({
-                      GetRate: GetRate,
-                      FromFedExSelectedCity: SelectedCity,
-                    });
-                }
-                else {
+                  var SelectedCity =
+                    FinalCity.length > 0
+                      ? {
+                          value: FinalCity[0].Citycode,
+                          label: FinalCity[0].CityName,
+                        }
+                      : { label: "Select City" };
+                  this.setState({
+                    GetRate: GetRate,
+                    FromFedExSelectedCity: SelectedCity,
+                  });
+                } else {
                   var SelectedCity =
                     GetRate.FromCountry.CountryCode === "US"
-                      ? { value: FinalCity[0].Citycode, label: FinalCity[0].CityName }
+                      ? {
+                          value: FinalCity[0].Citycode,
+                          label: FinalCity[0].CityName,
+                        }
                       : { value: "Not Required", label: "Not Required" };
-                      this.setState({
-                        GetRate: GetRate,
-                        FromSelectedCity: SelectedCity,
-                      });
+                  this.setState({
+                    GetRate: GetRate,
+                    FromSelectedCity: SelectedCity,
+                  });
                 }
                 if (FinalCity.length === 0) {
-                  var CityData = { CityType: "FedEx", CountryId: GetRate.FromCountry.CountryID };
+                  var CityData = {
+                    CityType: "FedEx",
+                    CountryId: GetRate.FromCountry.CountryID,
+                  };
                   this.showLoader();
                   api
                     .post("location/getCityList", CityData)
@@ -1097,7 +1160,7 @@ class Step1 extends React.Component {
               var state = "";
               var CityData = _.filter(
                 data["results"][0]["address_components"],
-                function (data) {
+                function(data) {
                   if (data.types[0] == "locality") {
                     return data.types[0] === "locality";
                   }
@@ -1106,7 +1169,7 @@ class Step1 extends React.Component {
 
               var CityData2 = _.filter(
                 data["results"][0]["address_components"],
-                function (data) {
+                function(data) {
                   if (data.types[0] == "neighborhood") {
                     return data.types[0] === "neighborhood";
                   }
@@ -1115,7 +1178,7 @@ class Step1 extends React.Component {
 
               var CityData3 = _.filter(
                 data["results"][0]["address_components"],
-                function (data) {
+                function(data) {
                   if (data.types[0] == "administrative_area_level_2") {
                     return data.types[0] === "administrative_area_level_2";
                   }
@@ -1124,7 +1187,7 @@ class Step1 extends React.Component {
 
               var CityData4 = _.filter(
                 data["results"][0]["address_components"],
-                function (data) {
+                function(data) {
                   if (data.types[0] == "administrative_area_level_1") {
                     return data.types[0] === "administrative_area_level_1";
                   }
@@ -1177,7 +1240,7 @@ class Step1 extends React.Component {
               let toStatename = "";
               if (
                 state == "" &&
-                _.filter(data["results"][0]["address_components"], function (
+                _.filter(data["results"][0]["address_components"], function(
                   data
                 ) {
                   return data.types[0] === "administrative_area_level_1";
@@ -1185,14 +1248,14 @@ class Step1 extends React.Component {
               ) {
                 state = _.filter(
                   data["results"][0]["address_components"],
-                  function (data) {
+                  function(data) {
                     return data.types[0] === "administrative_area_level_1";
                   }
                 )[0].short_name;
 
                 toStatename = _.filter(
                   data["results"][0]["address_components"],
-                  function (data) {
+                  function(data) {
                     return data.types[0] === "administrative_area_level_1";
                   }
                 )[0].long_name;
@@ -1211,19 +1274,25 @@ class Step1 extends React.Component {
                 ToState: state,
               });
               if (GetRate.ToCountry.CountryCode === "CN") {
-                var SelectedCity = FinalCity.length > 0
-                  ? { value: FinalCity[0].City_code, label: FinalCity[0].Name }
-                  : { label: "Select City" };
+                var SelectedCity =
+                  FinalCity.length > 0
+                    ? {
+                        value: FinalCity[0].City_code,
+                        label: FinalCity[0].Name,
+                      }
+                    : { label: "Select City" };
                 this.setState({
                   GetRate: GetRate,
                   ToState: state,
                   ToFedExSelectedCity: SelectedCity,
                 });
-              }
-              else {
+              } else {
                 var SelectedCity =
                   GetRate.ToCountry.CountryCode === "US"
-                    ? { value: FinalCity[0].City_code, label: FinalCity[0].Name }
+                    ? {
+                        value: FinalCity[0].City_code,
+                        label: FinalCity[0].Name,
+                      }
                     : { value: "Not Required", label: "Not Required" };
                 this.setState({
                   GetRate: GetRate,
@@ -1232,7 +1301,10 @@ class Step1 extends React.Component {
                 });
               }
               if (FinalCity.length === 0) {
-                var CityData = { CityType: "FedEx", CountryId: GetRate.ToCountry.CountryID };
+                var CityData = {
+                  CityType: "FedEx",
+                  CountryId: GetRate.ToCountry.CountryID,
+                };
                 this.showLoader();
                 api
                   .post("location/getCityList", CityData)
@@ -1251,7 +1323,6 @@ class Step1 extends React.Component {
               } else {
                 this.setState({ ToFedExCityList: [] });
               }
-
             } else if (data["results"][0]) {
               var FinalCity = [];
               var city = "";
@@ -1260,7 +1331,7 @@ class Step1 extends React.Component {
 
               if (
                 city == "" &&
-                _.filter(data["results"][0]["address_components"], function (
+                _.filter(data["results"][0]["address_components"], function(
                   data
                 ) {
                   return data.types[0] === "locality";
@@ -1269,13 +1340,13 @@ class Step1 extends React.Component {
               ) {
                 city = _.filter(
                   data["results"][0]["address_components"],
-                  function (data) {
+                  function(data) {
                     return data.types[0] === "locality";
                   }
                 )[0].short_name;
               } else if (
                 city == "" &&
-                _.filter(data["results"][0]["address_components"], function (
+                _.filter(data["results"][0]["address_components"], function(
                   data
                 ) {
                   return data.types[0] === "administrative_area_level_3";
@@ -1284,13 +1355,13 @@ class Step1 extends React.Component {
               ) {
                 city = _.filter(
                   data["results"][0]["address_components"],
-                  function (data) {
+                  function(data) {
                     return data.types[0] === "administrative_area_level_3";
                   }
                 )[0].short_name;
               } else if (
                 city == "" &&
-                _.filter(data["results"][0]["address_components"], function (
+                _.filter(data["results"][0]["address_components"], function(
                   data
                 ) {
                   return data.types[0] === "political";
@@ -1299,13 +1370,13 @@ class Step1 extends React.Component {
               ) {
                 city = _.filter(
                   data["results"][0]["address_components"],
-                  function (data) {
+                  function(data) {
                     return data.types[0] === "political";
                   }
                 )[0].short_name;
               } else if (
                 city == "" &&
-                _.filter(data["results"][0]["address_components"], function (
+                _.filter(data["results"][0]["address_components"], function(
                   data
                 ) {
                   return data.types[0] === "neighborhood";
@@ -1314,13 +1385,13 @@ class Step1 extends React.Component {
               ) {
                 city = _.filter(
                   data["results"][0]["address_components"],
-                  function (data) {
+                  function(data) {
                     return data.types[0] === "neighborhood";
                   }
                 )[0].short_name;
               } else if (
                 city == "" &&
-                _.filter(data["results"][0]["address_components"], function (
+                _.filter(data["results"][0]["address_components"], function(
                   data
                 ) {
                   return data.types[0] === "administrative_area_level_2";
@@ -1328,13 +1399,13 @@ class Step1 extends React.Component {
               ) {
                 city = _.filter(
                   data["results"][0]["address_components"],
-                  function (data) {
+                  function(data) {
                     return data.types[0] === "administrative_area_level_2";
                   }
                 )[0].long_name;
               } else if (
                 city == "" &&
-                _.filter(data["results"][0]["address_components"], function (
+                _.filter(data["results"][0]["address_components"], function(
                   data
                 ) {
                   return data.types[0] === "administrative_area_level_1";
@@ -1342,13 +1413,13 @@ class Step1 extends React.Component {
               ) {
                 city = _.filter(
                   data["results"][0]["address_components"],
-                  function (data) {
+                  function(data) {
                     return data.types[0] === "administrative_area_level_1";
                   }
                 )[0].long_name;
               } else if (
                 city == "" &&
-                _.filter(data["results"][0]["address_components"], function (
+                _.filter(data["results"][0]["address_components"], function(
                   data
                 ) {
                   return data.types[0] === "locality";
@@ -1357,7 +1428,7 @@ class Step1 extends React.Component {
               ) {
                 city = _.filter(
                   data["results"][0]["address_components"],
-                  function (data) {
+                  function(data) {
                     return data.types[0] === "locality";
                   }
                 )[0].long_name;
@@ -1368,7 +1439,7 @@ class Step1 extends React.Component {
               let toStatename = "";
               if (
                 state == "" &&
-                _.filter(data["results"][0]["address_components"], function (
+                _.filter(data["results"][0]["address_components"], function(
                   data
                 ) {
                   return data.types[0] === "administrative_area_level_1";
@@ -1376,13 +1447,13 @@ class Step1 extends React.Component {
               ) {
                 state = _.filter(
                   data["results"][0]["address_components"],
-                  function (data) {
+                  function(data) {
                     return data.types[0] === "administrative_area_level_1";
                   }
                 )[0].short_name;
                 toStatename = _.filter(
                   data["results"][0]["address_components"],
-                  function (data) {
+                  function(data) {
                     return data.types[0] === "administrative_area_level_1";
                   }
                 )[0].long_name;
@@ -1413,18 +1484,24 @@ class Step1 extends React.Component {
               GetRate.ToZipCode = zip;
 
               if (GetRate.ToCountry.CountryCode === "CN") {
-                var SelectedCity = FinalCity.length > 0
-                  ? { value: FinalCity[0].Citycode, label: FinalCity[0].CityName }
-                  : { label: "Select City" };
+                var SelectedCity =
+                  FinalCity.length > 0
+                    ? {
+                        value: FinalCity[0].Citycode,
+                        label: FinalCity[0].CityName,
+                      }
+                    : { label: "Select City" };
                 this.setState({
                   GetRate: GetRate,
                   ToFedExSelectedCity: SelectedCity,
                 });
-              }
-              else {
+              } else {
                 var SelectedCity =
                   GetRate.ToCountry.CountryCode === "US"
-                    ? { value: FinalCity[0].Citycode, label: FinalCity[0].CityName }
+                    ? {
+                        value: FinalCity[0].Citycode,
+                        label: FinalCity[0].CityName,
+                      }
                     : { value: "Not Required", label: "Not Required" };
                 this.setState({
                   GetRate: GetRate,
@@ -1432,7 +1509,10 @@ class Step1 extends React.Component {
                 });
               }
               if (FinalCity.length === 0) {
-                var CityData = { CityType: "FedEx", CountryId: GetRate.ToCountry.CountryID };
+                var CityData = {
+                  CityType: "FedEx",
+                  CountryId: GetRate.ToCountry.CountryID,
+                };
                 this.showLoader();
                 api
                   .post("location/getCityList", CityData)
@@ -1481,7 +1561,22 @@ class Step1 extends React.Component {
     }
     this.setState({ disableBtn: 1 });
   };
+  changeWeightType(e) {
+    if (e.target.value === "KG") {
+      this.setState({
+        SelectedDimensitionType: "CM",
+      });
+    } else {
+      this.setState({
+        SelectedDimensitionType: "Inches",
+      });
+    }
+    this.setState({
+      SelectedWeightType: e.target.value,
+    });
 
+    debugger;
+  }
   PackageTypeChange(e) {
     this.setState({ SelectedPackageType: e.target.value });
     var GetRate = this.state.GetRate;
@@ -1524,7 +1619,13 @@ class Step1 extends React.Component {
     this.setState({ StartDate: moment(date).toDate() });
   }
 
-  AddNewRowData = function () {
+  changedropdown(e, type) {
+    if (type === "PackedType") {
+      this.setState({ packageWeight: e.target.value });
+      debugger;
+    }
+  }
+  AddNewRowData = function() {
     if (this.state.PackageDetails.length >= this.state.MaxPackageCount) {
       alert("Sorry you can not add more packages.");
     } else {
@@ -1538,7 +1639,7 @@ class Step1 extends React.Component {
   DeleteRowData = (DeleteIndex) => (evt) => {
     var PackageDetails = this.state.PackageDetails;
     PackageDetails.splice(DeleteIndex, 1);
-    this.setState({ PackageDetails: PackageDetails }, function () {
+    this.setState({ PackageDetails: PackageDetails }, function() {
       this.Calculate();
     });
   };
@@ -1639,7 +1740,7 @@ class Step1 extends React.Component {
       }
     );
 
-    this.setState({ PackageDetails: NewPackageDetails }, function () {
+    this.setState({ PackageDetails: NewPackageDetails }, function() {
       this.Calculate();
     });
   };
@@ -1680,28 +1781,40 @@ class Step1 extends React.Component {
         if (PackageDetails[i].PackageHeight) {
           HE = PackageDetails[i].PackageHeight;
         }
-
+        debugger;
         if (
           this.state.GetRate.FromCountry.CountryCode == "US" &&
           this.state.GetRate.ToCountry.CountryCode == "US"
         ) {
-          Total =
-            Math.ceil(parseFloat((WE * LE * HE) / 166)) *
-            PackageDetails[i].PackageNumber;
+          if (this.state.SelectedWeightType === "KG") {
+            Total =
+              Math.ceil(parseFloat((WE * LE * HE) / 5000)) *
+              PackageDetails[i].PackageNumber;
+          } else {
+            Total =
+              Math.ceil(parseFloat((WE * LE * HE) / 166)) *
+              PackageDetails[i].PackageNumber;
+          }
         } else {
-          Total =
-            Math.ceil(parseFloat((WE * LE * HE) / 139)) *
-            PackageDetails[i].PackageNumber;
+          if (this.state.SelectedWeightType === "KG") {
+            Total =
+              Math.ceil(parseFloat((WE * LE * HE) / 5000)) *
+              PackageDetails[i].PackageNumber;
+          } else {
+            Total =
+              Math.ceil(parseFloat((WE * LE * HE) / 139)) *
+              PackageDetails[i].PackageNumber;
+          }
         }
 
-        if (
-          this.state.GetRate.FromCountry.CountryCode == "IN" &&
-          this.state.GetRate.ToCountry.CountryCode == "US"
-        ) {
-          Total =
-            Math.ceil(parseFloat(parseFloat(Total) / parseFloat(2.2))) *
-            PackageDetails[i].PackageNumber;
-        }
+        // if (
+        //   this.state.GetRate.FromCountry.CountryCode == "IN" &&
+        //   this.state.GetRate.ToCountry.CountryCode == "US"
+        // ) {
+        //   Total =
+        //     Math.ceil(parseFloat(parseFloat(Total) / parseFloat(2.2))) *
+        //     PackageDetails[i].PackageNumber;
+        // }
 
         if (Weight > Total) {
           PackageDetails[i].PackageChargableWeight = Weight;
@@ -1993,14 +2106,14 @@ class Step1 extends React.Component {
       this.state.GetRate.ToCountry.ToZipCodeOptional = true;
     }
     FinalGetRate.PackageType = this.state.GetRate.PackageType;
-    FinalGetRate.WeightType = this.state.GetRate.WeightType;
-
+    // FinalGetRate.WeightType = this.state.GetRate.WeightType;
+    FinalGetRate.WeightType = this.state.SelectedWeightType;
     UpsData.FromCountry = JSON.stringify(this.state.GetRate.FromCountry);
 
     UpsData.FromCity =
       this.state.GetRate.FromCity != null &&
-        this.state.GetRate.FromCity.value &&
-        this.state.GetRate.FromCity.value !== undefined
+      this.state.GetRate.FromCity.value &&
+      this.state.GetRate.FromCity.value !== undefined
         ? this.state.GetRate.FromCity.value
         : this.state.GetRate.FromCity;
     UpsData.FromUPSCity = this.state.GetRate.FromUPSCity;
@@ -2014,8 +2127,8 @@ class Step1 extends React.Component {
 
     UpsData.ToCity =
       this.state.GetRate.ToCity !== null &&
-        this.state.GetRate.ToCity.value &&
-        this.state.GetRate.ToCity.value !== undefined
+      this.state.GetRate.ToCity.value &&
+      this.state.GetRate.ToCity.value !== undefined
         ? this.state.GetRate.ToCity.value
         : this.state.GetRate.ToCity;
     UpsData.ToUPSCity = this.state.GetRate.ToUPSCity;
@@ -2120,7 +2233,7 @@ class Step1 extends React.Component {
     FinalGetRate.TotalHeight = TotalHeight;
     FinalGetRate.ChargableWeight = ChargableWeight;
     FinalGetRate.InsuredValues = InsuredValues;
-
+    FinalGetRate.SelectedWeightType = this.state.SelectedWeightType;
     if (this.state.GetRate.TotalInsuredValue) {
       FinalGetRate.Total = this.state.GetRate.TotalInsuredValue.toString();
     }
@@ -2153,7 +2266,7 @@ class Step1 extends React.Component {
     var data = JSON.stringify({ quoteData: FinalGetRate });
 
     let res = await api.post("getQuote/getRates", data);
-
+    debugger;
     if (res.success) {
       this.setState({ finalGetResults: res.data, Loading: false });
     } else {
@@ -2462,7 +2575,7 @@ class Step1 extends React.Component {
           });
         }
       });
-    } catch (err) { }
+    } catch (err) {}
   };
 
   htmlDecode(input) {
@@ -2518,9 +2631,11 @@ class Step1 extends React.Component {
           ? getRate.ToCity.value
             ? getRate.ToCity.value
             : getRate.ToCity
-          : getRate.ToFedExCity ? getRate.ToFedExCity.value
+          : getRate.ToFedExCity
+          ? getRate.ToFedExCity.value
             ? getRate.ToFedExCity.value
-            : getRate.ToFedExCity : '',
+            : getRate.ToFedExCity
+          : "",
         ToState: this.state.toStateName,
         ToZipCode: getRate.ToZipCode,
         SalesLeadFollowupDate: null,
@@ -2537,24 +2652,20 @@ class Step1 extends React.Component {
       let packagetype;
       if (packgList[0].PackageType === 1) {
         packagetype = "Boxes";
-      }
-      else if (packgList[0].PackageType === 2) {
+      } else if (packgList[0].PackageType === 2) {
         packagetype = "Document";
-      }
-      else if (packgList[0].PackageType === 3) {
+      } else if (packgList[0].PackageType === 3) {
         packagetype = "Furniture";
-      }
-      else if (packgList[0].PackageType === 4) {
+      } else if (packgList[0].PackageType === 4) {
         packagetype = "Television";
-      }
-      else if (packgList[0].PackageType === 5) {
+      } else if (packgList[0].PackageType === 5) {
         packagetype = "Auto";
       }
       let manageData = {
         Email: this.state.EmailAddress,
         Phone: this.state.Phone,
         PersonID: CommonConfig.loggedInUserData().PersonID,
-        newpackagetype: ''
+        newpackagetype: "",
       };
       if (CommonConfig.isEmpty(data.ManagedBy) || data.ManagedBy === 0) {
         api
@@ -2594,7 +2705,7 @@ class Step1 extends React.Component {
                     ChargableWeight: this.state.FinalGetRate.ChargableWeight,
                     RateData: arr,
                     IsResidential: this.state.IsResidential,
-                    RateType: 'Hub'
+                    RateType: "Hub",
                   };
                   api
                     .post("salesLead/sendGetRateEmail", emailData)
@@ -2615,7 +2726,7 @@ class Step1 extends React.Component {
             .catch((err) => {
               console.log("error", err);
             });
-        } catch (err) { }
+        } catch (err) {}
       }, 2000);
     }
   };
@@ -2745,11 +2856,11 @@ class Step1 extends React.Component {
         )}
 
         {this.state.GetRate.FromCountry.CountryCode === "US" ||
-          (this.state.GetRate.FromCountry.IsFedexCity === 0 &&
-            this.state.GetRate.FromCountry.IsUpsCity !== 1) ? (
-              this.state.GetRate.FromCountry.CountryCode === "CN" ?
-              <Grid item xs={4}>
-               <Autocomplete
+        (this.state.GetRate.FromCountry.IsFedexCity === 0 &&
+          this.state.GetRate.FromCountry.IsUpsCity !== 1) ? (
+          this.state.GetRate.FromCountry.CountryCode === "CN" ? (
+            <Grid item xs={4}>
+              <Autocomplete
                 options={FromFedExCityListDisplay}
                 id="FromFedExCity"
                 getOptionLabel={(option) => option.label}
@@ -2767,34 +2878,35 @@ class Step1 extends React.Component {
                   />
                 )}
               />
-              </Grid>
-              :
-          <GridItem xs={12} sm={12} md={4}>
-            <Autocomplete
-              options={FromCityListDisplay}
-              id="FromCity"
-              getOptionLabel={(option) => option.label}
-              value={this.state.FromSelectedCity}
-              disabled={
-                this.state.GetRate.FromCountry.CountryCode !== "US" &&
+            </Grid>
+          ) : (
+            <GridItem xs={12} sm={12} md={4}>
+              <Autocomplete
+                options={FromCityListDisplay}
+                id="FromCity"
+                getOptionLabel={(option) => option.label}
+                value={this.state.FromSelectedCity}
+                disabled={
+                  this.state.GetRate.FromCountry.CountryCode !== "US" &&
                   this.state.GetRate.FromCountry.IsFedexCity === 0
-                  ? true
-                  : false
-              }
-              autoSelect
-              onBlur={(e) => this.handleChange_Value1("FromCity")}
-              onChange={(event, value) => this.ChangeFromCity(value)}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="From City"
-                  fullWidth
-                  error={this.state.fromCityError}
-                  helperText={this.state.fromCityHelperText}
-                />
-              )}
-            />
-          </GridItem>
+                    ? true
+                    : false
+                }
+                autoSelect
+                onBlur={(e) => this.handleChange_Value1("FromCity")}
+                onChange={(event, value) => this.ChangeFromCity(value)}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="From City"
+                    fullWidth
+                    error={this.state.fromCityError}
+                    helperText={this.state.fromCityHelperText}
+                  />
+                )}
+              />
+            </GridItem>
+          )
         ) : this.state.GetRate.FromCountry.IsUpsCity === 1 ? (
           <GridItem xs={12} sm={12} md={4}>
             <FormControl fullWidth>
@@ -2911,9 +3023,9 @@ class Step1 extends React.Component {
         )}
 
         {this.state.GetRate.ToCountry.CountryCode === "US" ||
-          (this.state.GetRate.ToCountry.IsFedexCity === 0 &&
-            this.state.GetRate.ToCountry.IsUpsCity !== 1) ? (
-          this.state.GetRate.ToCountry.CountryCode === "CN" ?
+        (this.state.GetRate.ToCountry.IsFedexCity === 0 &&
+          this.state.GetRate.ToCountry.IsUpsCity !== 1) ? (
+          this.state.GetRate.ToCountry.CountryCode === "CN" ? (
             <Grid item xs={4}>
               <Autocomplete
                 options={ToFedExCityListDisplay}
@@ -2934,7 +3046,8 @@ class Step1 extends React.Component {
                 )}
               />
             </Grid>
-            : <Grid item xs={4}>
+          ) : (
+            <Grid item xs={4}>
               <Autocomplete
                 options={ToCityListDisplay}
                 id="toCity"
@@ -2942,7 +3055,7 @@ class Step1 extends React.Component {
                 value={this.state.ToSelectedCity}
                 disabled={
                   this.state.GetRate.ToCountry.CountryCode !== "US" &&
-                    this.state.GetRate.ToCountry.IsFedexCity === 0
+                  this.state.GetRate.ToCountry.IsFedexCity === 0
                     ? true
                     : false
                 }
@@ -2960,6 +3073,7 @@ class Step1 extends React.Component {
                 )}
               />
             </Grid>
+          )
         ) : this.state.GetRate.ToCountry.IsUpsCity === 1 ? (
           <Grid item xs={4}>
             <Autocomplete
@@ -3211,9 +3325,129 @@ class Step1 extends React.Component {
                 <thead>
                   <tr>
                     <th>No of Packages</th>
-                    <th>Weight (lbs)*</th>
-                    <th>Dimenstion (L + W + H in Inches)*</th>
-                    <th>Chargeble Weight</th>
+                    <th>
+                      <div className="with-drp">
+                        Weight
+                        <FormControl className={classes.formControl} fullWidth>
+                          <Select
+                            fullWidth={true}
+                            MenuProps={{ className: classes.selectMenu }}
+                            classes={{ select: classes.select }}
+                            onChange={(event) => this.changeWeightType(event)}
+                            value={this.state.SelectedWeightType}
+                            inputProps={{
+                              name: "residential?",
+                              id: "packagetype",
+                            }}
+                            defaultValue="LB"
+                          >
+                            <MenuItem
+                              classes={{
+                                root: classes.selectMenuItem,
+                                selected: classes.selectMenuItemSelected,
+                              }}
+                              value="LB"
+                            >
+                              {" "}
+                              LB{" "}
+                            </MenuItem>
+                            <MenuItem
+                              classes={{
+                                root: classes.selectMenuItem,
+                                selected: classes.selectMenuItemSelected,
+                              }}
+                              value="KG"
+                            >
+                              {" "}
+                              KG{" "}
+                            </MenuItem>
+                          </Select>
+                        </FormControl>
+                      </div>
+                    </th>
+                    <th>
+                      <div className="with-drp">
+                        {this.state.dimenstionType}{" "}
+                        <FormControl className={classes.formControl} fullWidth>
+                          <Select
+                            //   fullWidth={true}
+                            disabled={true}
+                            MenuProps={{ className: classes.selectMenu }}
+                            classes={{ select: classes.select }}
+                            onChange={(event) => this.changeWeightType(event)}
+                            value={this.state.SelectedDimensitionType}
+                            inputProps={{
+                              name: "residential?",
+                              id: "packagetype",
+                            }}
+                            defaultValue={this.state.SelectedDimensitionType}
+                          >
+                            <MenuItem
+                              classes={{
+                                root: classes.selectMenuItem,
+                                selected: classes.selectMenuItemSelected,
+                              }}
+                              value="Inches"
+                            >
+                              {" "}
+                              Inches{" "}
+                            </MenuItem>
+                            <MenuItem
+                              classes={{
+                                root: classes.selectMenuItem,
+                                selected: classes.selectMenuItemSelected,
+                              }}
+                              value="CM"
+                            >
+                              {" "}
+                              CM{" "}
+                            </MenuItem>
+                          </Select>
+                        </FormControl>
+                      </div>
+                    </th>
+                    <th>
+                      <div className="with-drp">
+                        <span className="nowrap">Chargeble Weight </span>
+                        <FormControl className={classes.formControl} fullWidth>
+                          <Select
+                            disabled={true}
+                            readOnly={true}
+                            fullWidth={true}
+                            MenuProps={{ className: classes.selectMenu }}
+                            classes={{ select: classes.select }}
+                            onChange={(event) => this.changeWeightType(event)}
+                            value={this.state.SelectedWeightType}
+                            inputProps={{
+                              name: "residential?",
+                              id: "packagetype",
+                            }}
+                            defaultValue="LB"
+                          >
+                            <MenuItem
+                              classes={{
+                                root: classes.selectMenuItem,
+                                selected: classes.selectMenuItemSelected,
+                              }}
+                              value="LB"
+                            >
+                              {" "}
+                              LB{" "}
+                            </MenuItem>
+                            <MenuItem
+                              classes={{
+                                root: classes.selectMenuItem,
+                                selected: classes.selectMenuItemSelected,
+                              }}
+                              value="KG"
+                            >
+                              {" "}
+                              KG{" "}
+                            </MenuItem>
+                          </Select>
+                        </FormControl>
+                      </div>
+                    </th>
                     <th>Insured Value (USD)*</th>
                     <th></th>
                   </tr>
