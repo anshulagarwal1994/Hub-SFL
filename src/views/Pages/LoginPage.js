@@ -231,7 +231,7 @@ class LoginPage extends Component {
                         src="https://www.sflworldwide.com"
                       ></iframe>
                       <CustomInput
-                        labelText="Username *"
+                        labelText="Username * Test"
                         id="username"
                         error={this.state.usernameErr}
                         helperText={this.state.usernameHelperText}
