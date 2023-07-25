@@ -81,16 +81,16 @@ class ShipmentNavigation extends Component {
 
       //Search Shipment
       shipmentType: [
-        { label: "Air", value: 1 },
-        { label: "Ocean", value: 2 },
-        { label: "Ground", value: 3 },
+        { label: "Air", value: "Air" },
+        { label: "Ocean", value: "Ocean" },
+        { label: "Ground", value: "Ground" },
       ],
       allClearlist: [
-        { label: "No", value: 1 },
-        { label: "Not Ready", value: 2 },
+        { label: "No", value: 0 },
+        { label: "Not Ready", value: "Not Ready" },
         { label: "Ready for Yes", value: 3 },
         { label: "Collection", value: 4 },
-        { label: "Yes", value: 5 },
+        { label: "Yes", value: 1 },
       ],
       managedby: [],
       CountryList: [],
@@ -487,7 +487,6 @@ class ShipmentNavigation extends Component {
 
   getShipmentListByStatus = (type) => {
     try {
-      debugger;
       let Query = "";
       let inputdata = this.state.checkdata;
       if (inputdata === "All") {
@@ -809,7 +808,7 @@ class ShipmentNavigation extends Component {
 
   validate() {
     let IsValid = true;
-    debugger;
+
     if (this.state.checkdata.length === 0) {
       IsValid = false;
       // this.setState({ newvalidate: true });
@@ -968,6 +967,652 @@ class ShipmentNavigation extends Component {
     this.setState({
       [type]: date,
     });
+  };
+
+  samefilter = () => {
+    let IsValid = true;
+    let filterLength;
+    var sameFilter = this.state.filtered;
+
+    for (var i = 0; i < sameFilter.length; i++) {
+      if (
+        sameFilter[i].field !== "ManagedBy" &&
+        sameFilter[i].field !== "FromCountryID" &&
+        sameFilter[i].field !== "ToCountryID"
+      ) {
+        filterLength = this.state.filtered.filter(
+          (x) =>
+            x.filterValue === sameFilter[i].filterValue &&
+            x.filter === sameFilter[i].filter &&
+            x.field === sameFilter[i].field
+        ).length;
+      } else {
+        filterLength = this.state.filtered.filter(
+          (x) =>
+            x.filterValue.value === sameFilter[i].filterValue.value &&
+            x.filter === sameFilter[i].filter &&
+            x.field === sameFilter[i].field
+        ).length;
+      }
+    }
+
+    if (filterLength >= 2) {
+      IsValid = false;
+    } else {
+      IsValid = true;
+    }
+    return IsValid;
+  };
+
+  validatenewSearcch = () => {
+    var finalFilterList = this.state.filtered;
+    let IsValid = true;
+    for (var i = 0; i < finalFilterList.length; i++) {
+      if (
+        !CommonConfig.isEmpty(finalFilterList[i]["field"]) &&
+        !CommonConfig.isEmpty(finalFilterList[i]["filter"])
+      ) {
+        if (finalFilterList[i]["field"] === "sm.ShipmentDate") {
+          if (CommonConfig.isEmpty(finalFilterList[i]["filterValue"])) {
+            IsValid = false;
+            finalFilterList[i]["error"] = true;
+            finalFilterList[i]["helperText"] = "Please select Lead Date";
+          } else {
+            IsValid = true;
+            finalFilterList[i]["error"] = false;
+            finalFilterList[i]["helperText"] = "";
+          }
+        }
+
+        if (finalFilterList[i]["field"] === "ContactName") {
+          if (CommonConfig.isEmpty(finalFilterList[i]["filterValue"])) {
+            IsValid = false;
+            finalFilterList[i]["error"] = true;
+            finalFilterList[i]["helperText"] = "Please enter Name";
+          } else if (finalFilterList[i]["filterValue"].length < 4) {
+            IsValid = false;
+            finalFilterList[i]["error"] = true;
+            finalFilterList[i]["helperText"] =
+              "Please enter atleast 4 character";
+          } else {
+            IsValid = true;
+            finalFilterList[i]["error"] = false;
+            finalFilterList[i]["helperText"] = "";
+          }
+        }
+
+        if (finalFilterList[i]["field"] === "PhoneNumber") {
+          if (CommonConfig.isEmpty(finalFilterList[i]["filterValue"])) {
+            IsValid = false;
+            finalFilterList[i]["error"] = true;
+            finalFilterList[i]["helperText"] = "Please enter Phone Number";
+          } else {
+            IsValid = true;
+            finalFilterList[i]["error"] = false;
+            finalFilterList[i]["helperText"] = "";
+          }
+        }
+
+        if (finalFilterList[i]["field"] === "Email") {
+          if (CommonConfig.isEmpty(finalFilterList[i]["filterValue"])) {
+            IsValid = false;
+            finalFilterList[i]["error"] = true;
+            finalFilterList[i]["helperText"] = "Please enter Email ID";
+          } else {
+            IsValid = true;
+            finalFilterList[i]["error"] = false;
+            finalFilterList[i]["helperText"] = "";
+          }
+        }
+
+        if (finalFilterList[i]["field"] === "ManagedBy") {
+          if (CommonConfig.isEmpty(finalFilterList[i]["filterValue"])) {
+            IsValid = false;
+            finalFilterList[i]["error"] = true;
+            finalFilterList[i]["helperText"] = "Please select managed by";
+          } else {
+            IsValid = true;
+            finalFilterList[i]["error"] = false;
+            finalFilterList[i]["helperText"] = "";
+          }
+        }
+
+        if (finalFilterList[i]["field"] === "FromState") {
+          if (CommonConfig.isEmpty(finalFilterList[i]["filterValue"])) {
+            IsValid = false;
+            finalFilterList[i]["error"] = true;
+            finalFilterList[i]["helperText"] = "Please enter From State";
+          } else {
+            IsValid = true;
+            finalFilterList[i]["error"] = false;
+            finalFilterList[i]["helperText"] = "";
+          }
+        }
+
+        if (finalFilterList[i]["field"] === "ToState") {
+          if (CommonConfig.isEmpty(finalFilterList[i]["filterValue"])) {
+            IsValid = false;
+            finalFilterList[i]["error"] = true;
+            finalFilterList[i]["helperText"] = "Please enter To State";
+          } else {
+            IsValid = true;
+            finalFilterList[i]["error"] = false;
+            finalFilterList[i]["helperText"] = "";
+          }
+        }
+
+        if (finalFilterList[i]["field"] === "FromZipCode") {
+          if (CommonConfig.isEmpty(finalFilterList[i]["filterValue"])) {
+            IsValid = false;
+            finalFilterList[i]["error"] = true;
+            finalFilterList[i]["helperText"] = "Please enter From Zip";
+          } else {
+            IsValid = true;
+            finalFilterList[i]["error"] = false;
+            finalFilterList[i]["helperText"] = "";
+          }
+        }
+
+        if (finalFilterList[i]["field"] === "ToCity") {
+          if (CommonConfig.isEmpty(finalFilterList[i]["filterValue"])) {
+            IsValid = false;
+            finalFilterList[i]["error"] = true;
+            finalFilterList[i]["helperText"] = "Please enter To City";
+          } else {
+            IsValid = true;
+            finalFilterList[i]["error"] = false;
+            finalFilterList[i]["helperText"] = "";
+          }
+        }
+
+        if (finalFilterList[i]["field"] === "ToZipCode") {
+          if (CommonConfig.isEmpty(finalFilterList[i]["filterValue"])) {
+            IsValid = false;
+            finalFilterList[i]["error"] = true;
+            finalFilterList[i]["helperText"] = "Please enter To Zip";
+          } else {
+            IsValid = true;
+            finalFilterList[i]["error"] = false;
+            finalFilterList[i]["helperText"] = "";
+          }
+        }
+
+        if (finalFilterList[i]["field"] === "ToCountryID") {
+          if (CommonConfig.isEmpty(finalFilterList[i]["filterValue"])) {
+            IsValid = false;
+            finalFilterList[i]["error"] = true;
+            finalFilterList[i]["helperText"] = "Please select Country";
+          } else {
+            IsValid = true;
+            finalFilterList[i]["error"] = false;
+            finalFilterList[i]["helperText"] = "";
+          }
+        }
+
+        if (finalFilterList[i]["field"] === "FromCountryID") {
+          if (CommonConfig.isEmpty(finalFilterList[i]["filterValue"])) {
+            IsValid = false;
+            finalFilterList[i]["error"] = true;
+            finalFilterList[i]["helperText"] = "Please select Country";
+          } else {
+            IsValid = true;
+            finalFilterList[i]["error"] = false;
+            finalFilterList[i]["helperText"] = "";
+          }
+        }
+
+        if (finalFilterList[i]["field"] === "PackageType") {
+          if (CommonConfig.isEmpty(finalFilterList[i]["filterValue"])) {
+            IsValid = false;
+            finalFilterList[i]["error"] = true;
+            finalFilterList[i]["helperText"] = "Please enter Content Type";
+          } else {
+            IsValid = true;
+            finalFilterList[i]["error"] = false;
+            finalFilterList[i]["helperText"] = "";
+          }
+        }
+
+        if (finalFilterList[i]["field"] === "FromCity") {
+          if (CommonConfig.isEmpty(finalFilterList[i]["filterValue"])) {
+            IsValid = false;
+            finalFilterList[i]["error"] = true;
+            finalFilterList[i]["helperText"] = "Please enter From City";
+          } else {
+            IsValid = true;
+            finalFilterList[i]["error"] = false;
+            finalFilterList[i]["helperText"] = "";
+          }
+        }
+      } else {
+        if (CommonConfig.isEmpty(finalFilterList[i]["field"])) {
+          IsValid = false;
+          finalFilterList[i]["fielderror"] = true;
+          finalFilterList[i]["fieldhelperText"] = "Please select one field";
+        }
+        if (CommonConfig.isEmpty(finalFilterList[i]["filter"])) {
+          IsValid = false;
+          finalFilterList[i]["filtererror"] = true;
+          finalFilterList[i]["filterhelperText"] = "Please select one filter";
+        }
+      }
+    }
+    this.setState({ fitered: finalFilterList });
+    return IsValid;
+  };
+  getSearchResults = (params) => {
+    let data = {
+      whereClause: params,
+    };
+
+    this.setState({ Loading: true });
+    api
+      .post("reports/getSearchShipment", data)
+      .then((result) => {
+        if (result.success) {
+          this.setState({ Loading: false });
+          // if (this.state.AllAccess === 1) {
+
+          this.setState({ SearchList: result.data });
+          debugger;
+          // } else {
+          //   let proposalData = result.Data.filter(
+          //     (x) => x.ManagedBy === this.state.loggedUser
+          //   );
+          //   this.setState({ SearchSalesLeadList: proposalData });
+          // }
+        } else {
+          this.setState({ Loading: false });
+          cogoToast.error("Something went wrong");
+        }
+      })
+      .catch((err) => {
+        cogoToast.error("Something Went Wrong");
+      });
+  };
+
+  search = () => {
+    if (this.validatenewSearcch()) {
+      if (this.samefilter()) {
+        var filterList = this.state.filtered.map((filter) => {
+          var obj = {};
+          obj.columnname = filter.field;
+          obj.condition = filter.filter.label;
+          obj.conditionoperator = filter.filter.value;
+
+          if (filter.filterValue.value) {
+            obj.value = filter.filterValue.value;
+          } else {
+            obj.value = filter.filterValue;
+          }
+
+          return obj;
+        });
+
+        this.setState({ SearchFinalFilter: filterList });
+        var FinalStr = "";
+        var operator = "AND";
+        // for (var j = 0; j < filterList.length; j++) {
+        //   debugger;
+        //   if (filterList[j]["columnname"] === "sat.ContactName") {
+        //     FinalStr =
+        //       FinalStr +
+        //       " " +
+        //       operator +
+        //       " " +
+        //       filterList[j]["columnname"] +
+        //       " " +
+        //       filterList[j]["conditionoperator"] +
+        //       " '" +
+        //       filterList[j]["value"] +
+        //       "'" +
+        //       " " +
+        //       "OR" +
+        //       " " +
+        //       "saf.ContactName" +
+        //       " " +
+        //       filterList[j]["conditionoperator"] +
+        //       " '" +
+        //       filterList[j]["value"] +
+        //       "'";
+        //   }
+        // }
+
+        for (var i = 0; i < filterList.length; i++) {
+          if (
+            !(
+              filterList[i]["columnname"] === "sm.ShipmentDate" &&
+              (filterList[i]["condition"] === "Start With" ||
+                filterList[i]["condition"] === "Ends With")
+            )
+          ) {
+            if (filterList[i]["condition"] === "Start With") {
+              if (i === 0) {
+                if (filterList[i]["columnname"] === "sm.ShipmentDate") {
+                  FinalStr =
+                    FinalStr +
+                    "date(" +
+                    filterList[i]["columnname"] +
+                    ") " +
+                    filterList[i]["conditionoperator"] +
+                    " '" +
+                    filterList[i]["value"] +
+                    "%'";
+                } else {
+                  FinalStr =
+                    FinalStr +
+                    filterList[i]["columnname"] +
+                    " " +
+                    filterList[i]["conditionoperator"] +
+                    " '" +
+                    filterList[i]["value"] +
+                    "%'";
+                }
+              } else {
+                if (filterList[i]["columnname"] === "sm.ShipmentDate") {
+                  FinalStr =
+                    FinalStr +
+                    " " +
+                    operator +
+                    " " +
+                    "date(" +
+                    filterList[i]["columnname"] +
+                    ") " +
+                    filterList[i]["conditionoperator"] +
+                    " '" +
+                    filterList[i]["value"] +
+                    "%" +
+                    "'";
+                } else {
+                  FinalStr =
+                    FinalStr +
+                    " " +
+                    operator +
+                    " " +
+                    filterList[i]["columnname"] +
+                    " " +
+                    filterList[i]["conditionoperator"] +
+                    " '" +
+                    filterList[i]["value"] +
+                    "%" +
+                    "'";
+                }
+              }
+            } else if (filterList[i]["condition"] === "Ends With") {
+              if (i === 0) {
+                if (filterList[i]["columnname"] === "sm.ShipmentDate") {
+                  FinalStr =
+                    FinalStr +
+                    "date(" +
+                    filterList[i]["columnname"] +
+                    ") " +
+                    filterList[i]["conditionoperator"] +
+                    " '" +
+                    "%" +
+                    filterList[i]["value"] +
+                    "'";
+                } else {
+                  FinalStr =
+                    FinalStr +
+                    filterList[i]["columnname"] +
+                    " " +
+                    filterList[i]["conditionoperator"] +
+                    " '" +
+                    "%" +
+                    filterList[i]["value"] +
+                    "'";
+                }
+              } else {
+                if (filterList[i]["columnname"] === "sm.ShipmentDate") {
+                  FinalStr =
+                    FinalStr +
+                    " " +
+                    operator +
+                    " " +
+                    "date(" +
+                    filterList[i]["columnname"] +
+                    ") " +
+                    filterList[i]["conditionoperator"] +
+                    " '" +
+                    "%" +
+                    filterList[i]["value"] +
+                    "'";
+                } else {
+                  FinalStr =
+                    FinalStr +
+                    " " +
+                    operator +
+                    " " +
+                    filterList[i]["columnname"] +
+                    " " +
+                    filterList[i]["conditionoperator"] +
+                    " '" +
+                    "%" +
+                    filterList[i]["value"] +
+                    "'";
+                }
+              }
+            } else if (filterList[i]["condition"] === "Contains") {
+              if (i === 0) {
+                if (filterList[i]["columnname"] === "sm.ShipmentDate") {
+                  FinalStr =
+                    FinalStr +
+                    "date(" +
+                    filterList[i]["columnname"] +
+                    ") " +
+                    filterList[i]["conditionoperator"] +
+                    " '%" +
+                    filterList[i]["value"] +
+                    "%'";
+                } else if (filterList[i]["columnname"] === "sat.ContactName") {
+                  FinalStr =
+                    FinalStr +
+                    " " +
+                    filterList[i]["columnname"] +
+                    " " +
+                    filterList[i]["conditionoperator"] +
+                    " '%" +
+                    filterList[i]["value"] +
+                    "%'" +
+                    "OR" +
+                    " " +
+                    "saf.ContactName" +
+                    " " +
+                    filterList[i]["conditionoperator"] +
+                    " '%" +
+                    filterList[i]["value"] +
+                    "%'";
+                } else {
+                  FinalStr =
+                    FinalStr +
+                    filterList[i]["columnname"] +
+                    " " +
+                    filterList[i]["conditionoperator"] +
+                    " '%" +
+                    filterList[i]["value"] +
+                    "%'";
+                }
+              } else {
+                if (filterList[i]["columnname"] === "sm.ShipmentDate") {
+                  FinalStr =
+                    FinalStr +
+                    " " +
+                    operator +
+                    " " +
+                    "date(" +
+                    filterList[i]["columnname"] +
+                    ") " +
+                    filterList[i]["conditionoperator"] +
+                    " '%" +
+                    filterList[i]["value"] +
+                    "%'";
+                } else if (filterList[i]["columnname"] === "sat.ContactName") {
+                  FinalStr =
+                    FinalStr +
+                    " " +
+                    filterList[i]["columnname"] +
+                    " " +
+                    filterList[i]["conditionoperator"] +
+                    " '%" +
+                    filterList[i]["value"] +
+                    "%'" +
+                    "OR" +
+                    " " +
+                    "saf.ContactName" +
+                    " " +
+                    filterList[i]["conditionoperator"] +
+                    " '%" +
+                    filterList[i]["value"] +
+                    "%'";
+                } else {
+                  FinalStr =
+                    FinalStr +
+                    " " +
+                    operator +
+                    " " +
+                    filterList[i]["columnname"] +
+                    " " +
+                    filterList[i]["conditionoperator"] +
+                    " '%" +
+                    filterList[i]["value"] +
+                    "%'";
+                }
+              }
+            } else {
+              if (i === 0) {
+                if (filterList[i]["columnname"] === "sm.ShipmentDate") {
+                  FinalStr =
+                    FinalStr +
+                    "date(" +
+                    filterList[i]["columnname"] +
+                    ") " +
+                    filterList[i]["conditionoperator"] +
+                    " '" +
+                    filterList[i]["value"] +
+                    "'";
+                } else {
+                  FinalStr =
+                    FinalStr +
+                    filterList[i]["columnname"] +
+                    " " +
+                    filterList[i]["conditionoperator"] +
+                    " '" +
+                    filterList[i]["value"] +
+                    "'";
+                }
+              } else {
+                if (filterList[i]["columnname"] === "sm.ShipmentDate") {
+                  FinalStr =
+                    FinalStr +
+                    " " +
+                    operator +
+                    " " +
+                    "date(" +
+                    filterList[i]["columnname"] +
+                    ") " +
+                    filterList[i]["conditionoperator"] +
+                    " '" +
+                    filterList[i]["value"] +
+                    "'";
+                } else {
+                  FinalStr =
+                    FinalStr +
+                    " " +
+                    operator +
+                    " " +
+                    filterList[i]["columnname"] +
+                    " " +
+                    filterList[i]["conditionoperator"] +
+                    " '" +
+                    filterList[i]["value"] +
+                    "'";
+                }
+              }
+            }
+          } else {
+            if (filterList[i]["condition"] === "Start With") {
+              filterList[i]["conditionoperator"] = ">=";
+            }
+
+            if (filterList[i]["condition"] === "Ends With") {
+              filterList[i]["conditionoperator"] = "<=";
+            }
+
+            if (i === 0) {
+              if (filterList[i]["columnname"] === "sm.ShipmentDate") {
+                FinalStr =
+                  FinalStr +
+                  "date(" +
+                  filterList[i]["columnname"] +
+                  ") " +
+                  filterList[i]["conditionoperator"] +
+                  " '" +
+                  filterList[i]["value"] +
+                  "'";
+              } else {
+                FinalStr =
+                  FinalStr +
+                  filterList[i]["columnname"] +
+                  " " +
+                  filterList[i]["conditionoperator"] +
+                  " '" +
+                  filterList[i]["value"] +
+                  "'";
+              }
+            } else {
+              if (filterList[i]["columnname"] === "sm.ShipmentDate") {
+                FinalStr =
+                  FinalStr +
+                  " " +
+                  operator +
+                  " " +
+                  "date(" +
+                  filterList[i]["columnname"] +
+                  ") " +
+                  filterList[i]["conditionoperator"] +
+                  " '" +
+                  filterList[i]["value"] +
+                  "'";
+              } else {
+                FinalStr =
+                  FinalStr +
+                  " " +
+                  operator +
+                  " " +
+                  filterList[i]["columnname"] +
+                  " " +
+                  filterList[i]["conditionoperator"] +
+                  " '" +
+                  filterList[i]["value"] +
+                  "'";
+              }
+            }
+          }
+        }
+
+        this.setState({
+          searchFilterValue: "All",
+          isEdit: false,
+          SearchClicked: true,
+        });
+
+        // if (CommonConfig.getUserAccess("Sales Lead").AllAccess === 1) {
+        //   this.setState({ isEdit: 1 });
+        // }
+
+        // if (CommonConfig.getUserAccess("Sales Lead").AllAccess === 0) {
+        //   this.setState({ AllAccess: 1 });
+        // }
+        // localStorage.setItem("SearchParams",JSON.stringify(FinalStr));
+        this.getSearchResults(FinalStr);
+      } else {
+        cogoToast.error(
+          "There were found same filters.Please check and modify"
+        );
+      }
+    } else {
+      cogoToast.error("Please correct error and resubmit form");
+    }
   };
 
   searchReport() {
@@ -1447,7 +2092,6 @@ class ShipmentNavigation extends Component {
   };
 
   handleCheckboxChange = (e, record, type) => {
-    debugger;
     let checkedArr = this.state.StatusList;
     if (type !== "All") {
       checkedArr
@@ -1497,7 +2141,6 @@ class ShipmentNavigation extends Component {
   };
   //New search by kruti
   getFilterlist = () => {
-    debugger;
     let data = { stringMapType: "SEARCHSALESLEADFILTER" };
     api
       .post("stringMap/getstringMap", data)
@@ -1607,7 +2250,6 @@ class ShipmentNavigation extends Component {
   };
 
   filterDropDown = () => {
-    debugger;
     return this.state.selectFilter
       .filter(
         (x) =>
@@ -1635,7 +2277,51 @@ class ShipmentNavigation extends Component {
       );
     });
   };
+  addnewFilter = () => {
+    var filterList = this.state.filtered;
+    var k = 0;
+    for (var i = 0; i < filterList.length; i++) {
+      if (CommonConfig.isEmpty(filterList[i]["field"])) {
+        filterList[i]["fielderror"] = true;
+        filterList[i]["fieldhelperText"] = "Please select one field";
+        k++;
+      }
+      if (CommonConfig.isEmpty(filterList[i]["filter"])) {
+        filterList[i]["filtererror"] = true;
+        filterList[i]["filterhelperText"] = "Please select one filter";
+        k++;
+      }
+      if (CommonConfig.isEmpty(filterList[i]["filterValue"])) {
+        filterList[i]["error"] = true;
+        filterList[i]["helperText"] = "Please enter value";
+        k++;
+      }
+    }
+
+    if (k === 0) {
+      const filterNew = {
+        field: "",
+        filter: "",
+        error: false,
+        helperText: "",
+        filterValue: "",
+        Index: this.state.filtered.length + 1,
+      };
+      this.setState({ filtered: [...this.state.filtered, filterNew] });
+    } else {
+      this.setState({ filtered: filterList });
+      cogoToast.error("Please fill above filter first.");
+    }
+  };
+  filterDelete = (Index) => {
+    const filterList = this.state.filtered;
+    filterList.splice(Index, 1);
+    this.setState({ filtered: filterList });
+  };
+
   managedBY = (event, type, idx, value) => {
+    // this.setState({ ManagedBy: value });
+
     const filterlist = this.state.filtered;
     filterlist[idx][type] = value;
     filterlist[idx]["error"] = false;
@@ -1643,6 +2329,7 @@ class ShipmentNavigation extends Component {
     this.setState({ filtered: filterlist });
   };
   shipmentType = (event, type, idx, value) => {
+    //  this.setState({ ShipmentType: value });
     const filterList = this.state.filtered;
     filterList[idx][type] = value;
     filterList[idx]["error"] = false;
@@ -1650,16 +2337,23 @@ class ShipmentNavigation extends Component {
     this.setState({ filtered: filterList });
   };
   allClearchange = (event, type, idx, value) => {
-    debugger;
     const filterList = this.state.filtered;
     filterList[idx][type] = value;
     filterList[idx]["error"] = false;
     filterList[idx]["helperText"] = "";
     this.setState({ filtered: filterList });
   };
+  handleLeadDate = (date, idx, type) => {
+    const filterlist = this.state.filtered;
+    filterlist[idx]["error"] = false;
+    filterlist[idx]["helperText"] = "";
+    filterlist[idx][type] = moment(date).format(
+      CommonConfig.dateFormat.dbDateTime
+    );
+    this.setState({ filtered: filterlist });
+  };
   filterRow = () => {
     return this.state.filtered.map((selectfield, idx) => {
-      debugger;
       const allClear = this.state.allClearlist.map((countrylist) => {
         return { value: countrylist.CountryID, label: countrylist.CountryName };
       });
@@ -1707,7 +2401,7 @@ class ShipmentNavigation extends Component {
                 value={selectfield.filter}
                 onChange={(event) => this.requestChange(event, idx)}
               >
-                {selectfield.field === "ManagedBy" ||
+                {selectfield.field === "sm.ManagedBy" ||
                 selectfield.field === "ToCountryID" ||
                 selectfield.field === "FromCountryID" ||
                 selectfield.field === "PackageType" ||
@@ -1719,7 +2413,7 @@ class ShipmentNavigation extends Component {
             </FormControl>
           </GridItem>
           <GridItem xs={12} sm={12} md={3}>
-            {selectfield.field === "Managed By" ? (
+            {selectfield.field === "sm.ManagedBy" ? (
               <Autocomplete
                 options={managedby}
                 id="managedby"
@@ -1742,7 +2436,7 @@ class ShipmentNavigation extends Component {
                   />
                 )}
               />
-            ) : selectfield.field === "Shipment Type" ? (
+            ) : selectfield.field === "sm.ShipmentType" ? (
               <Autocomplete
                 options={shipmentType}
                 id="shipmenttype"
@@ -1765,7 +2459,7 @@ class ShipmentNavigation extends Component {
                   />
                 )}
               />
-            ) : selectfield.field === "All Clear ?" ? (
+            ) : selectfield.field === "sm.AllClear" ? (
               <Autocomplete
                 options={allClear}
                 id="allClear"
@@ -1788,6 +2482,33 @@ class ShipmentNavigation extends Component {
                   />
                 )}
               />
+            ) : selectfield.field === "sm.ShipmentDate" ? (
+              <div className="dt-vs">
+                <FormControl fullWidth>
+                  <Datetime
+                    dateFormat={"MM/DD/YYYY"}
+                    timeFormat={false}
+                    selected={moment(selectfield.filterValue)}
+                    inputProps={{ placeholder: "Shipment Date" }}
+                    onChange={(date) =>
+                      this.handleLeadDate(date, idx, "filterValue")
+                    }
+                    closeOnSelect={true}
+                    renderInput={(params) => (
+                      <TextField
+                        style={{ marginTop: "-15px" }}
+                        error={selectfield.error}
+                        helperText={selectfield.helperText}
+                        {...params}
+                        label="Select Date"
+                        margin="normal"
+                        fullWidth
+                      />
+                    )}
+                  />
+                  <Icon className="date-icon tp-slam">date_range</Icon>
+                </FormControl>
+              </div>
             ) : (
               <CustomInput
                 labelText="Enter Value"
@@ -1810,6 +2531,29 @@ class ShipmentNavigation extends Component {
                 }}
               />
             )}
+          </GridItem>
+          <GridItem>
+            {idx !== 0 ? (
+              <Button
+                justIcon
+                color="danger"
+                className="Plus-btn mt-33"
+                onClick={() => this.filterDelete(idx)}
+              >
+                <i className={"fas fa-minus"} />
+              </Button>
+            ) : null}
+
+            {this.state.filtered.length - 1 === idx ? (
+              <Button
+                justIcon
+                color="facebook"
+                onClick={this.addnewFilter}
+                className="Plus-btn mt-33"
+              >
+                <i className={"fas fa-plus"} />
+              </Button>
+            ) : null}
           </GridItem>
         </GridContainer>
       );
@@ -2764,10 +3508,7 @@ class ShipmentNavigation extends Component {
                         </div>
                         <div className="shipment-submit">
                           <div className="right">
-                            <Button
-                              color="rose"
-                              onClick={() => this.searchReport()}
-                            >
+                            <Button color="rose" onClick={() => this.search()}>
                               Search
                             </Button>
                             <Button
